@@ -23,12 +23,21 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ================= LOGIC TOMBOL BANTUAN (OBFUSCATED) =================
+// ================= LOGIC TOMBOL BANTUAN (FIXED MOBILE) =================
 function triggerHelpWA() {
-  // Memecah nomor agar tidak mudah dicari text-nya di script
-  const _p = ["62", "831", "2993", "9682"];
-  const _msg = "Halo Admin IT, saya butuh bantuan aplikasi BMS Asset Ops.";
-  const _url = `https://wa.me/${_p.join("")}?text=${encodeURIComponent(_msg)}`;
-  window.open(_url, "_blank");
+    // 1. Obfuscate Nomor (Tetap tersembunyi/dipecah)
+    const _p = ['62', '831', '2993', '9682'];
+    
+    // 2. Pesan Default
+    const _msg = "Halo Admin IT, saya butuh bantuan aplikasi BMS Asset Ops.";
+    
+    // 3. Format URL Standar API WhatsApp
+    const _url = `https://api.whatsapp.com/send?phone=${_p.join('')}&text=${encodeURIComponent(_msg)}`;
+    
+    // 4. METODE BARU: 
+    // Jangan pakai window.open() karena sering diblokir pop-up blocker di HP.
+    // Pakai window.location.href agar dianggap "Navigasi Langsung" ke Aplikasi WA.
+    window.location.href = _url;
 }
 
 // ================= NAVIGASI =================
@@ -543,3 +552,4 @@ function toBase64(file) {
     reader.onerror = reject;
   });
 }
+
