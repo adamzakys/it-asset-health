@@ -394,17 +394,21 @@
     </div>
 
     <script>
-      // ⚠️ GANTI URL INI SETELAH DEPLOY NEW VERSION
+      // ⚠️ GANTI DENGAN URL DEPLOY TERBARU MAS ZAKY
       const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIMP9_q2245Gta50V8210719xHR5ezbScmsMsZSutVp7kbwPxe23Kqp2t1bfl_az0H/exec";
 
-      // --- 1. LOGIKA RECENT HISTORY ---
+      // --- 1. LOGIKA UTAMA (SCAN & SEARCH) ---
       let recentAssets = JSON.parse(localStorage.getItem("bms_recent")) || [];
+      let currentAsset = null;
+      let html5QrcodeScanner = null;
 
       function renderList(data, isSearchResult = false) {
         const container = document.getElementById("assetListContainer");
         const label = document.getElementById("listLabel");
-        container.innerHTML = "";
 
+        if (!container || !label) return;
+
+        container.innerHTML = "";
         label.innerText = isSearchResult ? `🔍 Hasil Pencarian (${data.length})` : "🕐 Terakhir Dilihat (Recent)";
 
         if (data.length === 0) {
@@ -425,29 +429,8 @@
         });
       }
 
-      function addToRecent(item) {
-        // Hapus jika duplikat
-        recentAssets = recentAssets.filter((a) => a.id !== item.id);
-        // Tambah ke paling atas
-        recentAssets.unshift(item);
-        // Limit max 10 item
-        if (recentAssets.length > 10) recentAssets.pop();
-        // Simpan
-        localStorage.setItem("bms_recent", JSON.stringify(recentAssets));
-      }
-
-      function clearRecent() {
-        if (confirm("Hapus riwayat?")) {
-          recentAssets = [];
-          localStorage.removeItem("bms_recent");
-          renderList(recentAssets);
-        }
-      }
-
-      // Tampilkan recent saat awal buka
       renderList(recentAssets);
 
-      // --- 2. LOGIKA SEARCH ONLINE ---
       function doSearch() {
         const keyword = document.getElementById("searchInput").value;
         if (!keyword) {
@@ -456,18 +439,12 @@
         }
 
         showLoading("Mencari Aset...");
-
         fetch(`${APPS_SCRIPT_URL}?action=search&q=${encodeURIComponent(keyword)}`)
           .then((res) => res.json())
-          .then((data) => {
-            renderList(data, true); // true = mode hasil search
-          })
-          .catch((err) => alert("Gagal koneksi server."))
+          .then((data) => renderList(data, true))
+          .catch((err) => alert("Gagal koneksi server: " + err))
           .finally(() => hideLoading());
       }
-
-      // --- 3. LOGIKA SCANNER ONLINE ---
-      let html5QrcodeScanner = null;
 
       function startScanner() {
         document.getElementById("scannerModal").style.display = "flex";
@@ -493,25 +470,26 @@
       }
 
       function fetchAssetById(id) {
-        showLoading("Mengambil Data Aset...");
-        // Cek ID di server
+        showLoading("Mengambil Data...");
         fetch(`${APPS_SCRIPT_URL}?action=scan&q=${encodeURIComponent(id)}`)
           .then((res) => res.json())
           .then((data) => {
             if (data.length > 0) {
               const item = data[0];
-              addToRecent(item); // Masukkan ke history
-              pilihAset(item); // Buka form
+              recentAssets = recentAssets.filter((a) => a.id !== item.id);
+              recentAssets.unshift(item);
+              if (recentAssets.length > 10) recentAssets.pop();
+              localStorage.setItem("bms_recent", JSON.stringify(recentAssets));
+              pilihAset(item);
             } else {
-              alert("Aset tidak ditemukan di database MasterData!");
+              alert("Aset tidak ditemukan di database!");
             }
           })
           .catch((err) => alert("Error koneksi: " + err))
           .finally(() => hideLoading());
       }
 
-      // --- 4. FORM & SUBMIT ---
-      let currentAsset = null;
+      // --- 2. LOGIKA FORM & FOTO (INI YANG BARU) ---
 
       function pilihAset(item) {
         currentAsset = item;
@@ -522,31 +500,90 @@
         document.getElementById("patrolListView").style.display = "none";
         document.getElementById("formLaporanView").style.display = "block";
 
-        // Refresh view recent jika tadi habis search
-        renderList(recentAssets);
-        document.getElementById("searchInput").value = "";
+        document.getElementById("catatan").value = "";
+        resetFileInput("fotoKondisi");
+        resetFileInput("fotoQR");
       }
 
       function batalLapor() {
         document.getElementById("formLaporanView").style.display = "none";
         document.getElementById("patrolListView").style.display = "block";
+        renderList(recentAssets);
       }
 
       function setStatus(el) {
-        // Helper visual active state radio
-        document.querySelectorAll('input[name="status"]').forEach((r) => (r.parentElement.querySelector("div").style.background = "white"));
-        el.style.background = "#e0f2fe";
+        const radio = el.parentElement.querySelector("input");
+        radio.checked = true;
+        document.querySelectorAll('input[name="status"]').forEach((r) => {
+          r.parentElement.querySelector("div").style.background = "white";
+          r.parentElement.querySelector("div").style.borderColor = "#e2e8f0";
+        });
+        el.style.background = "#eff6ff";
+        el.style.borderColor = "#2563eb";
       }
 
-      async function submitData() {
-        const status = document.querySelector('input[name="status"]:checked').value;
-        const catatan = document.getElementById("catatan").value;
+      // FUNGSI UTAMA PREVIEW FOTO
+      function previewImage(input, type) {
+        if (input.files && input.files[0]) {
+          if (input.files[0].size > 5 * 1024 * 1024) {
+            alert("Ukuran foto terlalu besar! Maksimal 5MB.");
+            input.value = "";
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            if (input.id === "fotoKondisi") {
+              document.getElementById("prev1").src = e.target.result;
+              document.getElementById("prev1").style.display = "block";
+              document.getElementById("txt1").style.display = "none";
+            } else if (input.id === "fotoQR") {
+              document.getElementById("prev2").src = e.target.result;
+              document.getElementById("prev2").style.display = "block";
+              document.getElementById("txt2").style.display = "none";
+            }
+          };
+          reader.readAsDataURL(input.files[0]);
+        }
+      }
 
-        showLoading("Mengirim Laporan...");
+      function resetFileInput(id) {
+        document.getElementById(id).value = "";
+        if (id === "fotoKondisi") {
+          document.getElementById("prev1").style.display = "none";
+          document.getElementById("prev1").src = "";
+          document.getElementById("txt1").style.display = "block";
+        } else {
+          document.getElementById("prev2").style.display = "none";
+          document.getElementById("prev2").src = "";
+          document.getElementById("txt2").style.display = "block";
+        }
+      }
+
+      // --- 3. SUBMIT DATA DENGAN UPLOAD FOTO ---
+      async function submitData() {
+        const statusEl = document.querySelector('input[name="status"]:checked');
+        if (!statusEl) {
+          alert("Pilih status kondisi dulu!");
+          return;
+        }
+
+        const status = statusEl.value;
+        const catatan = document.getElementById("catatan").value;
+        const file1 = document.getElementById("fotoKondisi").files[0];
+        const file2 = document.getElementById("fotoQR").files[0];
+
+        if (status !== "Normal" && !catatan) {
+          alert("Jika kondisi rusak/cek, wajib isi catatan!");
+          return;
+        }
+
+        showLoading("Mengompres Foto & Mengirim...");
 
         try {
-          // Dummy upload logic (simple text send)
-          // Mas Zaky bisa aktifkan base64 upload di sini jika mau
+          // KONVERSI GAMBAR (PENTING!)
+          const base64Img1 = file1 ? await toBase64(file1) : "";
+          const base64Img2 = file2 ? await toBase64(file2) : "";
+
           const payload = {
             namaAset: currentAsset.name,
             lokasi: currentAsset.location,
@@ -554,7 +591,8 @@
             catatan: catatan,
             petugas: "Adam Zaky",
             waktu: new Date().toLocaleString(),
-            // fotoKondisi: ... (convert base64 here if needed)
+            fotoKondisi: base64Img1, // Data Gambar 1
+            fotoQR: base64Img2, // Data Gambar 2
           };
 
           await fetch(APPS_SCRIPT_URL, {
@@ -562,16 +600,48 @@
             body: JSON.stringify(payload),
           });
 
-          alert("Laporan Terkirim!");
+          alert("✅ Laporan Berhasil Disimpan!");
           batalLapor();
         } catch (e) {
-          alert("Gagal kirim: " + e);
+          console.error(e);
+          alert("Gagal kirim laporan: " + e.message);
         } finally {
           hideLoading();
         }
       }
 
-      // --- UTILS ---
+      // HELPER: Convert Image to Base64 (WAJIB ADA)
+      function toBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+              const canvas = document.createElement("canvas");
+              const MAX_WIDTH = 800;
+              const scaleSize = MAX_WIDTH / img.width;
+              canvas.width = MAX_WIDTH;
+              canvas.height = img.height * scaleSize;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              resolve(canvas.toDataURL("image/jpeg", 0.6));
+            };
+          };
+          reader.onerror = (error) => reject(error);
+        });
+      }
+
+      // --- 4. UTILS ---
+      function showLoading(txt) {
+        document.getElementById("loadingModal").style.display = "flex";
+        document.getElementById("loadingText").innerText = txt;
+      }
+      function hideLoading() {
+        document.getElementById("loadingModal").style.display = "none";
+      }
+
       function switchTab(tab, el) {
         document.querySelectorAll(".tab-section").forEach((t) => t.classList.remove("active"));
         document.querySelectorAll(".nav-item").forEach((n) => n.classList.remove("active"));
@@ -581,12 +651,12 @@
         document.getElementById("headerTitle").innerText = titles[tab];
       }
 
-      function showLoading(txt) {
-        document.getElementById("loadingModal").style.display = "flex";
-        document.getElementById("loadingText").innerText = txt;
-      }
-      function hideLoading() {
-        document.getElementById("loadingModal").style.display = "none";
+      function copyText(id) {
+        const text = document.getElementById(id).innerText;
+        navigator.clipboard
+          .writeText(text)
+          .then(() => alert("Copied!"))
+          .catch((err) => alert("Gagal copy"));
       }
     </script>
   </body>
