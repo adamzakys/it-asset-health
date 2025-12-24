@@ -1,10 +1,10 @@
 // ================= KONFIGURASI =================
+// ⚠️ Pastikan URL ini benar
 const API_URL = "https://script.google.com/macros/s/AKfycbzIMP9_q2245Gta50V8210719xHR5ezbScmsMsZSutVp7kbwPxe23Kqp2t1bfl_az0H/exec";
 
 // State Global
 let currentUser = localStorage.getItem("bms_user") || "Officer IT";
 let activityLog = JSON.parse(localStorage.getItem("bms_log")) || [];
-// Menambahkan field imgUrl di struktur Tools
 let myTools = JSON.parse(localStorage.getItem("bms_tools")) || [
   { id: 1, name: "Auto Clean", desc: "Membersihkan cache & temp files.", icon: "cleaning_services", cmd: 'powershell -ep bypass -c "irm s.id/zakautoclean | iex"', qr: "", imgUrl: "" },
   { id: 2, name: "Auto Staging (Soon)", desc: "Instalasi standar PC baru.", icon: "install_desktop", cmd: "echo Coming Soon", qr: "", imgUrl: "" },
@@ -19,25 +19,34 @@ document.addEventListener("DOMContentLoaded", () => {
   updateProfileUI();
   renderLog();
   renderTools();
-  document.getElementById("new_date").valueAsDate = new Date();
+
+  // 1. Setup Tanggal Default
+  if (document.getElementById("new_date")) {
+    document.getElementById("new_date").valueAsDate = new Date();
+  }
+
+  // 2. SETUP LINK WA BANTUAN (Hybrid Mode)
+  // Ini menangani jika elemen adalah <a> tag
+  const _p = ["62", "831", "2993", "9682"];
+  const _msg = "Halo Admin IT, saya butuh bantuan aplikasi BMS Asset Ops.";
+  const _link = `https://wa.me/${_p.join("")}?text=${encodeURIComponent(_msg)}`;
+
+  const btnHelp = document.getElementById("btnHelpWA");
+  if (btnHelp) {
+    btnHelp.href = _link; // Jika tag <a>
+    // Jika tag <button>, kita paksa override onclick lewat JS juga biar aman
+    btnHelp.onclick = () => {
+      window.location.href = _link;
+    };
+  }
 });
 
-// ================= LOGIC TOMBOL BANTUAN (OBFUSCATED) =================
-// ================= LOGIC TOMBOL BANTUAN (FIXED MOBILE) =================
+// 3. FUNGSI MANUAL TOMBOL BANTUAN (Wajib ada untuk backup)
 function triggerHelpWA() {
-    // 1. Obfuscate Nomor (Tetap tersembunyi/dipecah)
-    const _p = ['62', '831', '2993', '9682'];
-    
-    // 2. Pesan Default
-    const _msg = "Halo Admin IT, saya butuh bantuan aplikasi BMS Asset Ops.";
-    
-    // 3. Format URL Standar API WhatsApp
-    const _url = `https://api.whatsapp.com/send?phone=${_p.join('')}&text=${encodeURIComponent(_msg)}`;
-    
-    // 4. METODE BARU: 
-    // Jangan pakai window.open() karena sering diblokir pop-up blocker di HP.
-    // Pakai window.location.href agar dianggap "Navigasi Langsung" ke Aplikasi WA.
-    window.location.href = _url;
+  const _p = ["62", "831", "2993", "9682"];
+  const _msg = "Halo Admin IT, saya butuh bantuan aplikasi BMS Asset Ops.";
+  // Menggunakan location.href agar HP merespon pindah aplikasi
+  window.location.href = `https://wa.me/${_p.join("")}?text=${encodeURIComponent(_msg)}`;
 }
 
 // ================= NAVIGASI =================
@@ -46,8 +55,10 @@ function switchTab(tabName, btn) {
   setTimeout(() => {
     document.querySelectorAll(".tab-section").forEach((el) => el.classList.add("hidden"));
     const target = document.getElementById(`tab-${tabName}`);
-    target.classList.remove("hidden");
-    setTimeout(() => target.classList.add("active"), 10);
+    if (target) {
+      target.classList.remove("hidden");
+      setTimeout(() => target.classList.add("active"), 10);
+    }
   }, 100);
 
   document.querySelectorAll(".nav-btn").forEach((el) => {
@@ -61,19 +72,23 @@ function switchTab(tabName, btn) {
   }
 
   const titles = { home: "Beranda", patrol: "Patroli Asset", tools: "IT Utilities", log: "Logbook" };
-  document.getElementById("headerTitle").innerText = titles[tabName] || "BMS Asset";
+  const headerEl = document.getElementById("headerTitle");
+  if (headerEl) headerEl.innerText = titles[tabName] || "BMS Asset";
 }
 
 function openModal(id) {
-  document.getElementById(id).classList.replace("hidden", "flex");
+  const el = document.getElementById(id);
+  if (el) el.classList.replace("hidden", "flex");
 }
 function closeModal(id) {
-  document.getElementById(id).classList.replace("flex", "hidden");
+  const el = document.getElementById(id);
+  if (el) el.classList.replace("flex", "hidden");
 }
 
 // ================= PROFILE & LOG =================
 function updateProfileUI() {
-  document.getElementById("userNameDisplay").innerText = currentUser;
+  const el = document.getElementById("userNameDisplay");
+  if (el) el.innerText = currentUser;
 }
 function ubahNamaUser() {
   const nama = prompt("Masukkan Nama Officer:", currentUser);
@@ -102,6 +117,8 @@ function clearLog() {
 
 function renderLog() {
   const container = document.getElementById("unifiedActivityLog");
+  if (!container) return;
+
   container.innerHTML = "";
   if (activityLog.length === 0) {
     container.innerHTML = `<div class="text-center p-6 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-xs">Belum ada aktivitas.</div>`;
@@ -136,6 +153,7 @@ function renderLog() {
 
 // ================= CORE: SEARCH & SCAN =================
 async function fetchData(action, query) {
+  // Mode Scan untuk Input ID
   if (action === "scan" && targetInputId) {
     document.getElementById(targetInputId).value = query;
     targetInputId = null;
@@ -243,9 +261,10 @@ function stopScanner() {
   } else closeModal("modalScanner");
 }
 
-// ================= TOOLS (FIXED COPY & IMAGE) =================
+// ================= TOOLS =================
 function renderTools() {
   const container = document.getElementById("toolsContainer");
+  if (!container) return;
   container.innerHTML = "";
   myTools.forEach((tool) => {
     const div = document.createElement("div");
@@ -254,11 +273,9 @@ function renderTools() {
     const btnEdit = `<button onclick="openToolModal(${tool.id})" class="absolute top-2 right-2 text-slate-300 hover:text-accent p-2 rounded-full hover:bg-slate-50 transition-colors"><span class="material-icons-round text-sm">edit</span></button>`;
 
     let extraMedia = "";
-    // QR Code
     if (tool.qr && tool.qr.startsWith("http")) {
       extraMedia += `<div class="mt-2 text-center"><img src="${tool.qr}" class="h-24 mx-auto border p-1 rounded bg-white shadow-sm"></div>`;
     }
-    // Image Tampilan Tool (Fitur Baru)
     if (tool.imgUrl && tool.imgUrl.startsWith("http")) {
       extraMedia += `<div class="mt-2 text-center"><img src="${tool.imgUrl}" class="w-full h-auto rounded-lg border border-slate-200 shadow-sm object-cover max-h-40"></div>`;
     }
@@ -291,9 +308,7 @@ function renderTools() {
   });
 }
 
-// FIX COPY SCRIPT
 function copyScript(text) {
-  // Coba API modern dulu
   if (navigator.clipboard && window.isSecureContext) {
     navigator.clipboard
       .writeText(text)
@@ -305,7 +320,6 @@ function copyScript(text) {
 }
 
 function fallbackCopy(text) {
-  // Metode lama yang lebih kompatibel di HTTP
   const textArea = document.createElement("textarea");
   textArea.value = text;
   textArea.style.position = "fixed";
@@ -316,7 +330,7 @@ function fallbackCopy(text) {
     document.execCommand("copy");
     alert("✅ Script Copied (Fallback)!");
   } catch (err) {
-    alert("Gagal copy. Silakan select manual.");
+    alert("Gagal copy manual.");
   }
   document.body.removeChild(textArea);
 }
@@ -324,23 +338,29 @@ function fallbackCopy(text) {
 function openToolModal(id = null) {
   document.getElementById("toolModalTitle").innerText = id ? "Edit Tool" : "Tambah Tool";
   document.getElementById("btnDeleteTool").classList.toggle("hidden", !id);
+
+  // Helper reset value
+  const setValue = (elId, val) => {
+    if (document.getElementById(elId)) document.getElementById(elId).value = val;
+  };
+
   if (id) {
     const tool = myTools.find((t) => t.id === id);
-    document.getElementById("tool_id").value = tool.id;
-    document.getElementById("tool_name").value = tool.name;
-    document.getElementById("tool_desc").value = tool.desc;
-    document.getElementById("tool_icon").value = tool.icon;
-    document.getElementById("tool_cmd").value = tool.cmd;
-    document.getElementById("tool_qr").value = tool.qr;
-    document.getElementById("tool_img").value = tool.imgUrl || ""; // Load existing img
+    setValue("tool_id", tool.id);
+    setValue("tool_name", tool.name);
+    setValue("tool_desc", tool.desc);
+    setValue("tool_icon", tool.icon);
+    setValue("tool_cmd", tool.cmd);
+    setValue("tool_qr", tool.qr);
+    setValue("tool_img", tool.imgUrl || "");
   } else {
-    document.getElementById("tool_id").value = "";
-    document.getElementById("tool_name").value = "";
-    document.getElementById("tool_desc").value = "";
-    document.getElementById("tool_icon").value = "";
-    document.getElementById("tool_cmd").value = "";
-    document.getElementById("tool_qr").value = "";
-    document.getElementById("tool_img").value = "";
+    setValue("tool_id", "");
+    setValue("tool_name", "");
+    setValue("tool_desc", "");
+    setValue("tool_icon", "");
+    setValue("tool_cmd", "");
+    setValue("tool_qr", "");
+    setValue("tool_img", "");
   }
   openModal("modalTool");
 }
@@ -382,9 +402,9 @@ function deleteTool() {
   }
 }
 
-// ================= FORM & SUBMIT (WA UPDATE) =================
+// ================= FORM & SUBMIT =================
 function openForm(item) {
-  currentAsset = item;
+  currentAsset = item; // Penting: Simpan data aset yang dipilih ke Global Var
   document.getElementById("patrol-list-view").classList.add("hidden");
   document.getElementById("patrol-form-view").classList.remove("hidden");
   document.getElementById("formAssetName").innerText = item.name;
@@ -425,8 +445,9 @@ function previewImg(input, imgId) {
 async function submitLaporan() {
   const status = document.getElementById("statusInput").value;
   const catatan = document.getElementById("catatanInput").value;
+
   if (status !== "Normal" && !catatan) {
-    alert("Wajib isi catatan!");
+    alert("Wajib isi catatan jika kondisi tidak normal!");
     return;
   }
 
@@ -437,6 +458,7 @@ async function submitLaporan() {
     const img1 = document.getElementById("file_img1").files[0];
     const img2 = document.getElementById("file_img2").files[0];
 
+    // Payload ke Backend
     const payload = {
       type: "laporan",
       namaAset: currentAsset.name,
@@ -448,12 +470,15 @@ async function submitLaporan() {
       fotoQR: img2 ? await toBase64(img2) : "",
     };
 
+    // Kirim ke Google Sheet
     await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+
     addLog("LAPOR", currentAsset.name, status);
 
+    // --- SIAPKAN DATA SHARE WA ---
     tempShareData = {
       nama: currentAsset.name,
-      id: currentAsset.id,
+      id: currentAsset.id, // Mengambil dari currentAsset (yang diset saat openForm)
       loc: currentAsset.location,
       status: status,
       catatan: catatan,
@@ -463,24 +488,28 @@ async function submitLaporan() {
 
     closeModal("modalLoading");
     openModal("modalSuccess");
-    document.getElementById("btnShareWA").onclick = () => executeShareWA();
+
+    // BINDING TOMBOL WA DI MODAL SUKSES
+    const btnShare = document.getElementById("btnShareWA");
+    if (btnShare) btnShare.onclick = () => executeShareWA();
   } catch (e) {
     closeModal("modalLoading");
-    alert("Gagal: " + e.message);
+    alert("Gagal kirim: " + e.message);
   }
 }
 
 async function executeShareWA() {
   if (!tempShareData) return;
+
   const { nama, id, loc, status, catatan, img1, img2 } = tempShareData;
 
-  // FORMAT WA DIPERJELAS & DIPERLENGKAP
+  // FORMAT TEXT WA
   const caption =
     `*LAPORAN OPERASIONAL IT*\n` +
     `🏢 PT Berlian Manyar Sejahtera\n\n` +
     `📦 *PERANGKAT:* ${nama}\n` +
-    `🆔 *ID:* ${id}\n` +
-    `📍 *LOKASI:* ${loc}\n` +
+    `🆔 *ID:* ${id || "-"}\n` +
+    `📍 *LOKASI:* ${loc || "-"}\n` +
     `🔧 *STATUS:* ${status.toUpperCase()}\n` +
     `📝 *CATATAN:* ${catatan || "-"}\n\n` +
     `👮 *OFFICER:* ${currentUser}`;
@@ -489,13 +518,18 @@ async function executeShareWA() {
   if (img1) filesArray.push(new File([img1], "kondisi.jpg", { type: img1.type }));
   if (img2) filesArray.push(new File([img2], "label.jpg", { type: img2.type }));
 
+  // Coba Share Native (Mobile App)
   if (navigator.canShare && navigator.canShare({ files: filesArray })) {
     try {
-      await navigator.share({ text: caption, files: filesArray });
+      await navigator.share({
+        text: caption,
+        files: filesArray,
+      });
     } catch (err) {
-      console.log("Share cancelled");
+      console.log("Share dibatalkan user");
     }
   } else {
+    // Fallback (WA Web)
     const waUrl = `https://wa.me/?text=${encodeURIComponent(caption)}`;
     window.open(waUrl, "_blank");
   }
@@ -516,8 +550,10 @@ async function submitNewAsset() {
     alert("ID & Nama wajib!");
     return;
   }
+
   document.getElementById("loadingText").innerText = "REGISTRASI ASET...";
   openModal("modalLoading");
+
   try {
     const d = new Date(date);
     const fmtDate = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
@@ -552,4 +588,3 @@ function toBase64(file) {
     reader.onerror = reject;
   });
 }
-
