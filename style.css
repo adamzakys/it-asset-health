@@ -1,0 +1,38 @@
+/* style.css
+  Hanya untuk style yang tidak tercover oleh Tailwind Utility
+*/
+
+/* Animasi Tab Switching yang halus */
+.tab-section {
+  display: none; /* Default hidden */
+}
+
+/* Saat kelas 'active' ditambahkan via JS */
+.tab-section.active {
+  display: block;
+  animation: fadeSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Base style untuk tombol nav */
+.nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
