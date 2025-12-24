@@ -9,34 +9,24 @@
 
     <style>
       :root {
-        --primary: #2563eb; /* Biru Utama */
-        --primary-dark: #1e40af;
-        --danger: #dc2626;
-        --warning: #f59e0b;
-        --success: #16a34a;
+        --primary: #2563eb;
         --bg: #f8fafc;
         --card: #ffffff;
         --nav-height: 65px;
       }
-
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        background-color: var(--bg);
+        font-family: sans-serif;
+        background: var(--bg);
         margin: 0;
-        padding: 0;
+        padding-bottom: 90px;
         color: #1f2937;
-        /* Padding bawah agar konten tidak tertutup navigasi */
-        padding-bottom: calc(var(--nav-height) + 20px);
       }
 
-      /* --- LAYOUT UMUM --- */
       .container {
         max-width: 480px;
         margin: 0 auto;
         min-height: 90vh;
-        position: relative;
       }
-
       .header {
         background: var(--primary);
         color: white;
@@ -45,25 +35,20 @@
         position: sticky;
         top: 0;
         z-index: 10;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
       .header h2 {
         margin: 0;
         font-size: 1.1rem;
       }
-      .header p {
-        margin: 0;
-        font-size: 0.75rem;
-        opacity: 0.9;
-      }
 
-      /* --- TAB CONTENT LOGIC --- */
+      /* TAB SECTIONS */
       .tab-section {
-        display: none; /* Default hidden */
-        animation: fadeIn 0.3s;
+        display: none;
+        padding: 1rem;
       }
       .tab-section.active {
         display: block;
+        animation: fadeIn 0.3s;
       }
       @keyframes fadeIn {
         from {
@@ -76,26 +61,27 @@
         }
       }
 
-      /* --- STYLE TAB 1: PATROL --- */
-      .content {
-        padding: 1rem;
-      }
-
-      .search-box {
-        position: relative;
+      /* SEARCH & LIST */
+      .search-wrapper {
+        display: flex;
+        gap: 8px;
         margin-bottom: 1rem;
       }
       .search-input {
-        width: 100%;
-        padding: 1rem;
+        flex: 1;
+        padding: 0.8rem;
         border: 2px solid #e2e8f0;
-        border-radius: 12px;
+        border-radius: 10px;
         font-size: 1rem;
-        box-sizing: border-box;
         outline: none;
       }
-      .search-input:focus {
-        border-color: var(--primary);
+      .btn-search {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 0 1rem;
+        border-radius: 10px;
+        cursor: pointer;
       }
 
       .btn-scan {
@@ -111,24 +97,31 @@
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
-        cursor: pointer;
-        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
         margin-bottom: 1.5rem;
+        box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+      }
+
+      .section-label {
+        font-size: 0.85rem;
+        font-weight: bold;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+        display: flex;
+        justify-content: space-between;
       }
 
       .asset-card {
-        background: var(--card);
+        background: white;
         padding: 1rem;
         border-radius: 10px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        cursor: pointer;
         border: 1px solid #e2e8f0;
         margin-bottom: 0.8rem;
-        transition: 0.2s;
+        cursor: pointer;
       }
       .asset-card:active {
-        background: #eff6ff;
         border-color: var(--primary);
+        background: #eff6ff;
       }
       .asset-name {
         font-weight: 600;
@@ -137,10 +130,18 @@
       .asset-loc {
         color: #64748b;
         font-size: 0.85rem;
-        margin-top: 0.2rem;
+        margin-top: 4px;
+      }
+      .asset-date {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        margin-top: 6px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
       }
 
-      /* Style Form Laporan (Sub-bagian dari Patrol) */
+      /* FORM STYLE */
       #formLaporanView {
         display: none;
       }
@@ -151,102 +152,26 @@
         margin-bottom: 1.5rem;
         border-left: 5px solid var(--primary);
       }
-      .label {
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-        display: block;
-        font-size: 0.9rem;
-      }
-
-      .status-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
-      }
-      .status-opt {
-        padding: 0.8rem;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        text-align: center;
-        font-size: 0.85rem;
-        cursor: pointer;
-        font-weight: 500;
-      }
-      input[type="radio"] {
-        display: none;
-      }
-      input[type="radio"]:checked + .status-opt[data-val="Normal"] {
-        background: var(--success);
-        color: white;
-        border-color: var(--success);
-      }
-      input[type="radio"]:checked + .status-opt[data-val="Maintenance"] {
-        background: var(--warning);
-        color: white;
-        border-color: var(--warning);
-      }
-      input[type="radio"]:checked + .status-opt[data-val="Rusak"] {
-        background: var(--danger);
-        color: white;
-        border-color: var(--danger);
-      }
-
-      textarea {
+      textarea,
+      input[type="text"] {
         width: 100%;
-        padding: 0.8rem;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
         box-sizing: border-box;
-        margin-bottom: 1rem;
       }
-
-      .upload-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.8rem;
-        margin-bottom: 2rem;
-      }
-      .upload-box {
-        border: 2px dashed #cbd5e1;
+      textarea {
+        padding: 0.8rem;
+        border: 1px solid #cbd5e1;
         border-radius: 8px;
-        padding: 0.5rem;
-        text-align: center;
-        background: #f8fafc;
-        height: 100px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        position: relative;
-        color: #64748b;
-        font-size: 0.8rem;
-      }
-      .upload-box input {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-        opacity: 0;
-        cursor: pointer;
-      }
-      .preview-img {
-        max-width: 100%;
-        max-height: 100%;
-        display: none;
-        border-radius: 4px;
+        margin-bottom: 1rem;
       }
 
       .btn-submit {
-        background: var(--success);
+        background: #16a34a;
         color: white;
         width: 100%;
         padding: 1rem;
         border: none;
         border-radius: 12px;
         font-weight: bold;
-        font-size: 1.1rem;
         margin-bottom: 1rem;
       }
       .btn-cancel {
@@ -257,69 +182,7 @@
         padding: 0.5rem;
       }
 
-      /* --- STYLE TAB 2: IT TOOLS --- */
-      .tool-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.2rem;
-        margin-bottom: 1rem;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-      }
-      .tool-title {
-        font-weight: bold;
-        font-size: 1.1rem;
-        margin-bottom: 0.5rem;
-        color: var(--primary);
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-      .tool-desc {
-        font-size: 0.9rem;
-        color: #475569;
-        margin-bottom: 1rem;
-        line-height: 1.4;
-      }
-      .command-box {
-        background: #1e293b;
-        color: #a5f3fc;
-        padding: 1rem;
-        border-radius: 8px;
-        font-family: monospace;
-        font-size: 0.85rem;
-        word-break: break-all;
-        margin-bottom: 0.8rem;
-        position: relative;
-      }
-      .btn-copy {
-        background: #e2e8f0;
-        color: #334155;
-        border: none;
-        padding: 0.6rem 1rem;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 0.9rem;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        width: 100%;
-        justify-content: center;
-      }
-      .btn-copy:active {
-        background: #cbd5e1;
-      }
-
-      /* --- STYLE TAB 3: REQUEST --- */
-      .iframe-container {
-        width: 100%;
-        height: calc(100vh - 130px); /* Full height minus header & nav */
-        border: none;
-        background: white;
-      }
-
-      /* --- BOTTOM NAVIGATION BAR --- */
+      /* NAV & MODALS */
       .bottom-nav {
         position: fixed;
         bottom: 0;
@@ -331,28 +194,24 @@
         display: grid;
         grid-template-columns: 1fr 1fr 1fr;
         z-index: 100;
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
       }
       .nav-item {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        text-decoration: none;
         color: #94a3b8;
         font-size: 0.75rem;
-        -webkit-tap-highlight-color: transparent;
       }
       .nav-item.active {
         color: var(--primary);
         font-weight: 600;
       }
-      .nav-item .material-icons-round {
+      .material-icons-round {
         font-size: 24px;
         margin-bottom: 4px;
       }
 
-      /* --- MODALS (Scanner & Loading) --- */
       #scannerModal,
       #loadingModal {
         position: fixed;
@@ -366,17 +225,14 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-      }
-      #reader {
-        width: 100%;
-        max-width: 400px;
+        color: white;
       }
       .spinner {
+        width: 40px;
+        height: 40px;
         border: 4px solid #f3f3f3;
         border-top: 4px solid var(--primary);
         border-radius: 50%;
-        width: 40px;
-        height: 40px;
         animation: spin 1s linear infinite;
       }
       @keyframes spin {
@@ -387,67 +243,88 @@
           transform: rotate(360deg);
         }
       }
+
+      /* Tools & Log Style */
+      .tool-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+      .cmd-box {
+        background: #1e293b;
+        color: #a5f3fc;
+        padding: 0.8rem;
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: 0.8rem;
+        word-break: break-all;
+        margin: 0.5rem 0;
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <div class="header">
         <h2 id="headerTitle">🛡️ BMS Asset Patrol</h2>
-        <p>Adam Zaky • MagangHub</p>
+        <p>Full Online • Recent History</p>
       </div>
 
       <div id="tab-patrol" class="tab-section active">
-        <div id="patrolListView" class="content">
+        <div id="patrolListView">
           <button class="btn-scan" onclick="startScanner()"><span class="material-icons-round">qr_code_scanner</span> Scan QR Code</button>
 
-          <div class="search-box">
-            <input type="text" class="search-input" id="searchInput" placeholder="🔍 Cari nama aset manual..." onkeyup="filterAssets()" />
+          <div class="search-wrapper">
+            <input type="text" class="search-input" id="searchInput" placeholder="Cari nama aset / lokasi..." />
+            <button class="btn-search" onclick="doSearch()">
+              <span class="material-icons-round">search</span>
+            </button>
           </div>
 
+          <div class="section-label">
+            <span id="listLabel">🕐 Terakhir Dilihat (Recent)</span>
+            <span style="color: var(--primary); cursor: pointer" onclick="clearRecent()">Hapus</span>
+          </div>
           <div id="assetListContainer"></div>
         </div>
 
-        <div id="formLaporanView" class="content">
+        <div id="formLaporanView">
           <div class="form-header">
-            <div class="asset-name" id="selectedAssetName">Nama Aset</div>
-            <div class="asset-loc" id="selectedAssetLoc">Lokasi</div>
-            <small style="color: var(--primary)">ID: <span id="selectedAssetId"></span></small>
+            <div class="asset-name" id="selectedAssetName">...</div>
+            <div class="asset-loc" id="selectedAssetLoc">...</div>
+            <small style="color: var(--primary)">ID: <span id="selectedAssetId">...</span></small>
           </div>
 
-          <label class="label">Kondisi Perangkat</label>
-          <div class="status-grid">
-            <label>
-              <input type="radio" name="status" value="Normal" checked />
-              <div class="status-opt" data-val="Normal">🟢<br />Normal</div>
-            </label>
-            <label>
-              <input type="radio" name="status" value="Maintenance" />
-              <div class="status-opt" data-val="Maintenance">🟡<br />Perlu Cek</div>
-            </label>
-            <label>
-              <input type="radio" name="status" value="Rusak" />
-              <div class="status-opt" data-val="Rusak">🔴<br />Rusak</div>
-            </label>
+          <label style="font-weight: 600; display: block; margin-bottom: 0.5rem">Kondisi</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem">
+            <label
+              ><input type="radio" name="status" value="Normal" checked hidden />
+              <div class="asset-card" style="text-align: center; margin: 0" onclick="setStatus(this)">🟢<br />Normal</div></label
+            >
+            <label
+              ><input type="radio" name="status" value="Maintenance" hidden />
+              <div class="asset-card" style="text-align: center; margin: 0" onclick="setStatus(this)">🟡<br />Cek</div></label
+            >
+            <label
+              ><input type="radio" name="status" value="Rusak" hidden />
+              <div class="asset-card" style="text-align: center; margin: 0" onclick="setStatus(this)">🔴<br />Rusak</div></label
+            >
           </div>
 
-          <label class="label">Catatan / Kendala</label>
-          <textarea id="catatan" rows="3" placeholder="Contoh: Lensa buram, kabel putus, dll..."></textarea>
+          <textarea id="catatan" rows="3" placeholder="Catatan kendala..."></textarea>
 
-          <div class="upload-grid">
-            <div class="upload-box">
-              <span id="txt1">📸 Foto Bukti<br />(Kondisi)</span>
-              <img id="prev1" class="preview-img" />
-              <input type="file" id="fotoKondisi" accept="image/*" capture="environment" onchange="previewImage(this, 'prev1', 'txt1')" />
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem">
+            <div style="border: 2px dashed #ccc; padding: 10px; text-align: center; border-radius: 8px" onclick="document.getElementById('fotoKondisi').click()">
+              📸 Foto Kondisi <input type="file" id="fotoKondisi" hidden accept="image/*" capture="environment" />
             </div>
-            <div class="upload-box">
-              <span id="txt2">📷 Foto QR<br />(Label Aset)</span>
-              <img id="prev2" class="preview-img" />
-              <input type="file" id="fotoQR" accept="image/*" capture="environment" onchange="previewImage(this, 'prev2', 'txt2')" />
+            <div style="border: 2px dashed #ccc; padding: 10px; text-align: center; border-radius: 8px" onclick="document.getElementById('fotoQR').click()">
+              📷 Foto QR <input type="file" id="fotoQR" hidden accept="image/*" capture="environment" />
             </div>
           </div>
 
-          <button class="btn-submit" onclick="submitData()">💾 Simpan & Share WA</button>
-          <button class="btn-cancel" onclick="batalLapor()">Batal</button>
+          <button class="btn-submit" onclick="submitData()">💾 Simpan Laporan</button>
+          <button class="btn-cancel" onclick="batalLapor()">Kembali</button>
         </div>
       </div>
 
@@ -460,219 +337,150 @@
             </div>
             <div class="tool-desc">Script otomatis untuk membersihkan Temp, Prefetch, dan Cache Windows yang memberatkan PC.</div>
 
-            <div style="background: #f1f5f9; padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 10px">
-              <strong>Instruksi:</strong><br />
+            <div style="background: #f1f5f9; padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 10px; border-left: 4px solid var(--primary)">
+              <strong>Cara 1 (Copy Paste):</strong><br />
               1. Buka <b>CMD / PowerShell</b> (Run as Administrator).<br />
-              2. Ketik/Paste perintah di bawah ini lalu Enter.
+              2. Copy perintah di bawah & Paste di CMD.
             </div>
 
-            <div class="command-box" id="cmd1">powershell -ep bypass -c "irm s.id/zakautoclean | iex"</div>
+            <div class="cmd-box" id="cmd1">powershell -ep bypass -c "irm s.id/zakautoclean | iex"</div>
 
-            <button class="btn-copy" onclick="copyText('cmd1')"><span class="material-icons-round">content_copy</span> Copy Script</button>
+            <button class="btn-copy" onclick="copyText('cmd1')" style="margin-bottom: 1.5rem"><span class="material-icons-round">content_copy</span> Copy Script</button>
+
+            <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin-bottom: 1.5rem" />
+
+            <div style="background: #f1f5f9; padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 10px; border-left: 4px solid #f59e0b">
+              <strong>Cara 2 (Scan Link):</strong><br />
+              Scan QR ini untuk mendapatkan link download script langsung.
+            </div>
+
+            <div style="text-align: center">
+              <img src="https://qrtiger.com/temp/1766552709461.png" alt="QR Code Script" style="width: 150px; height: 150px; border: 1px solid #e2e8f0; padding: 5px; border-radius: 8px" />
+              <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 5px">s.id/zakautoclean</p>
+            </div>
           </div>
 
           <div class="tool-card" style="opacity: 0.7">
             <div class="tool-title">
               <span class="material-icons-round">build</span>
-              Network Reset (Segera Hadir)
+              Network Reset (Coming Soon)
             </div>
             <div class="tool-desc">Reset IP, Flush DNS, dan reset Winsock otomatis.</div>
           </div>
         </div>
       </div>
-      <div id="tab-request" class="tab-section">
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; padding: 2rem; text-align: center">
-          <span class="material-icons-round" style="font-size: 64px; color: #cbd5e1; margin-bottom: 1rem">assignment_add</span>
 
-          <h3 style="margin: 0 0 0.5rem 0; color: #334155">Permintaan Perbaikan</h3>
-          <p style="color: #64748b; margin-bottom: 2rem; font-size: 0.95rem; line-height: 1.5">Silakan isi formulir FR-TI-03 via Microsoft Forms untuk request perbaikan perangkat.</p>
-
-          <a
-            href="https://forms.office.com/pages/responsepage.aspx?id=KLtAVeyfj06mOaTCvGmbz79ARk5a-2JFt3WedBEs_kVUMVBFWkpTTkhLUEwxNFA2WFZVWlg2WFg5US4u&route=shorturl"
-            target="_blank"
-            class="btn-scan"
-            style="text-decoration: none; background: #0f766e; margin: 0"
-          >
-            <span class="material-icons-round">open_in_new</span>
-            Buka Formulir (Full Screen)
-          </a>
-        </div>
+      <div id="tab-log" class="tab-section" style="text-align: center; padding-top: 2rem">
+        <span class="material-icons-round" style="font-size: 48px; color: #ccc">history_edu</span>
+        <h3>Coming Soon</h3>
+        <p style="color: #666">Modul E-Logbook IT (FR-TI-04) sedang disiapkan.</p>
       </div>
     </div>
+
     <nav class="bottom-nav">
-      <div class="nav-item active" onclick="switchTab('patrol', this)">
-        <span class="material-icons-round">admin_panel_settings</span>
-        <span>Patrol</span>
-      </div>
-      <div class="nav-item" onclick="switchTab('tools', this)">
-        <span class="material-icons-round">construction</span>
-        <span>Tools</span>
-      </div>
-      <div class="nav-item" onclick="switchTab('request', this)">
-        <span class="material-icons-round">assignment</span>
-        <span>Request</span>
-      </div>
+      <div class="nav-item active" onclick="switchTab('patrol', this)"><span class="material-icons-round">admin_panel_settings</span>Patrol</div>
+      <div class="nav-item" onclick="switchTab('tools', this)"><span class="material-icons-round">construction</span>Tools</div>
+      <div class="nav-item" onclick="switchTab('log', this)"><span class="material-icons-round">history_edu</span>Log IT</div>
     </nav>
 
     <div id="scannerModal">
-      <div style="color: white; margin-bottom: 1rem">Arahkan ke QR Code</div>
-      <div id="reader"></div>
-      <button class="btn-cancel" style="color: white; margin-top: 1rem" onclick="stopScanner()">Tutup Kamera</button>
+      <div style="margin-bottom: 1rem">Arahkan ke QR Code</div>
+      <div id="reader" style="width: 300px"></div>
+      <button class="btn-cancel" style="color: white; margin-top: 1rem" onclick="stopScanner()">Tutup</button>
     </div>
-
     <div id="loadingModal">
       <div class="spinner"></div>
-      <p style="color: white; margin-top: 1rem">Mengupload Data...</p>
+      <p id="loadingText" style="margin-top: 10px">Memuat...</p>
     </div>
 
     <script>
-      // --- KONFIGURASI ---
+      // ⚠️ GANTI URL INI SETELAH DEPLOY NEW VERSION
       const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIMP9_q2245Gta50V8210719xHR5ezbScmsMsZSutVp7kbwPxe23Kqp2t1bfl_az0H/exec";
 
-      // --- LOGIKA NAVIGASI TAB ---
-      function switchTab(tabName, navElement) {
-        // 1. Hide semua tab
-        document.querySelectorAll(".tab-section").forEach((el) => el.classList.remove("active"));
-        // 2. Reset nav active state
-        document.querySelectorAll(".nav-item").forEach((el) => el.classList.remove("active"));
+      // --- 1. LOGIKA RECENT HISTORY ---
+      let recentAssets = JSON.parse(localStorage.getItem("bms_recent")) || [];
 
-        // 3. Show tab yang dipilih
-        document.getElementById("tab-" + tabName).classList.add("active");
-        // 4. Set nav aktif
-        navElement.classList.add("active");
-
-        // 5. Ganti Judul Header
-        const titles = {
-          patrol: "🛡️ BMS Asset Patrol",
-          tools: "🛠️ IT Utility Tools",
-          request: "📝 Form Perbaikan",
-        };
-        document.getElementById("headerTitle").innerText = titles[tabName];
-      }
-
-      // --- LOGIKA COPY TEXT (IT TOOLS) ---
-      function copyText(elementId) {
-        const text = document.getElementById(elementId).innerText.trim();
-        navigator.clipboard
-          .writeText(text)
-          .then(() => {
-            alert("Script tersalin! Silakan paste di CMD/PowerShell.");
-          })
-          .catch((err) => {
-            alert("Gagal menyalin otomatis. Silakan blok teks dan copy manual.");
-          });
-      }
-
-      // --- LOGIKA ASSET (SAMA SEPERTI SEBELUMNYA) ---
-      const assetList = [
-        { id: "2MO37/TIK/Port/2024", name: "Monitor (2MO37)", location: "Divisi TIK/Port" },
-        { id: "A001-ex", name: "CCTV LPR - Gate In 1", location: "Gate In 1 (Utama)" },
-        { id: "A002-ex", name: "Barrier Gate - Gate In 1", location: "Gate In 1 (Utama)" },
-        { id: "A003-ex", name: "Manless Box Ticket", location: "Gate In 1 (Utama)" },
-        { id: "B001-ex", name: "CCTV Overview", location: "Buffer Zone" },
-        { id: "B002-ex", name: "Barrier Gate Buffer", location: "Buffer Zone" },
-        { id: "B003-ex", name: "PC Admin Pos Buffer", location: "Pos Buffer Zone" },
-        { id: "C001-ex", name: "Server Rack Utama", location: "Ruang IT" },
-        { id: "C002-ex", name: "Wifi Access Point Lobby", location: "Lobby Gedung" },
-      ];
-
-      function renderAssets(data) {
+      function renderList(data, isSearchResult = false) {
         const container = document.getElementById("assetListContainer");
+        const label = document.getElementById("listLabel");
         container.innerHTML = "";
+
+        label.innerText = isSearchResult ? `🔍 Hasil Pencarian (${data.length})` : "🕐 Terakhir Dilihat (Recent)";
+
         if (data.length === 0) {
-          container.innerHTML = '<div style="text-align:center; padding:1rem; color:#999;">Aset tidak ditemukan</div>';
+          container.innerHTML = `<div style="text-align:center; padding:2rem; color:#999">${isSearchResult ? "Tidak ada aset ditemukan" : "Belum ada riwayat"}</div>`;
           return;
         }
+
         data.forEach((item) => {
           const card = document.createElement("div");
           card.className = "asset-card";
           card.onclick = () => pilihAset(item);
           card.innerHTML = `
             <div class="asset-name">${item.name}</div>
-            <div class="asset-loc">📍 ${item.location} <span style="font-size:0.7rem; background:#eee; padding:2px 4px; border-radius:4px; margin-left:5px;">${item.id}</span></div>
+            <div class="asset-loc">📍 ${item.location} <span style="background:#eee; padding:2px 5px; font-size:0.7rem; border-radius:4px">${item.id}</span></div>
+            <div class="asset-date"><span class="material-icons-round" style="font-size:14px">calendar_today</span> Sejak: ${item.date || "-"}</div>
           `;
           container.appendChild(card);
         });
       }
 
-      // Render awal
-      renderAssets(assetList);
-
-      function filterAssets() {
-        const keyword = document.getElementById("searchInput").value.toLowerCase();
-        const filtered = assetList.filter((item) => item.name.toLowerCase().includes(keyword) || item.location.toLowerCase().includes(keyword));
-        renderAssets(filtered);
+      function addToRecent(item) {
+        // Hapus jika duplikat
+        recentAssets = recentAssets.filter((a) => a.id !== item.id);
+        // Tambah ke paling atas
+        recentAssets.unshift(item);
+        // Limit max 10 item
+        if (recentAssets.length > 10) recentAssets.pop();
+        // Simpan
+        localStorage.setItem("bms_recent", JSON.stringify(recentAssets));
       }
 
-      // --- LOGIKA FORMULIR & SCANNER ---
-      let currentAsset = null;
+      function clearRecent() {
+        if (confirm("Hapus riwayat?")) {
+          recentAssets = [];
+          localStorage.removeItem("bms_recent");
+          renderList(recentAssets);
+        }
+      }
+
+      // Tampilkan recent saat awal buka
+      renderList(recentAssets);
+
+      // --- 2. LOGIKA SEARCH ONLINE ---
+      function doSearch() {
+        const keyword = document.getElementById("searchInput").value;
+        if (!keyword) {
+          renderList(recentAssets);
+          return;
+        }
+
+        showLoading("Mencari Aset...");
+
+        fetch(`${APPS_SCRIPT_URL}?action=search&q=${encodeURIComponent(keyword)}`)
+          .then((res) => res.json())
+          .then((data) => {
+            renderList(data, true); // true = mode hasil search
+          })
+          .catch((err) => alert("Gagal koneksi server."))
+          .finally(() => hideLoading());
+      }
+
+      // --- 3. LOGIKA SCANNER ONLINE ---
       let html5QrcodeScanner = null;
-
-      function pilihAset(item) {
-        currentAsset = item;
-        document.getElementById("selectedAssetName").innerText = item.name;
-        document.getElementById("selectedAssetLoc").innerText = item.location;
-        document.getElementById("selectedAssetId").innerText = item.id;
-
-        // Switch view di dalam tab Patrol
-        document.getElementById("patrolListView").style.display = "none";
-        document.getElementById("formLaporanView").style.display = "block";
-        window.scrollTo(0, 0);
-      }
-
-      function batalLapor() {
-        if (confirm("Batalkan laporan?")) {
-          resetForm();
-          document.getElementById("formLaporanView").style.display = "none";
-          document.getElementById("patrolListView").style.display = "block";
-        }
-      }
-
-      function resetForm() {
-        document.getElementById("catatan").value = "";
-        document.querySelector('input[name="status"][value="Normal"]').checked = true;
-        document.getElementById("fotoKondisi").value = "";
-        document.getElementById("fotoQR").value = "";
-        document.getElementById("prev1").style.display = "none";
-        document.getElementById("prev2").style.display = "none";
-        document.getElementById("txt1").style.display = "block";
-        document.getElementById("txt2").style.display = "block";
-      }
-
-      function previewImage(input, imgId, txtId) {
-        if (input.files && input.files[0]) {
-          const reader = new FileReader();
-          reader.onload = function (e) {
-            document.getElementById(imgId).src = e.target.result;
-            document.getElementById(imgId).style.display = "block";
-            document.getElementById(txtId).style.display = "none";
-          };
-          reader.readAsDataURL(input.files[0]);
-        }
-      }
 
       function startScanner() {
         document.getElementById("scannerModal").style.display = "flex";
         html5QrcodeScanner = new Html5Qrcode("reader");
-        html5QrcodeScanner
-          .start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            (decodedText) => {
-              stopScanner();
-              const found = assetList.find((a) => a.id === decodedText || decodedText.includes(a.id));
-              if (found) {
-                pilihAset(found);
-              } else {
-                alert(`QR Terbaca: ${decodedText}\nData tidak ada di list lokal.`);
-              }
-            },
-            (errorMessage) => {}
-          )
-          .catch((err) => {
-            alert("Gagal membuka kamera.");
+        html5QrcodeScanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: 250 },
+          (decodedText) => {
             stopScanner();
-          });
+            fetchAssetById(decodedText);
+          },
+          (err) => {}
+        );
       }
 
       function stopScanner() {
@@ -681,92 +489,104 @@
             html5QrcodeScanner.clear();
             document.getElementById("scannerModal").style.display = "none";
           });
-        } else {
-          document.getElementById("scannerModal").style.display = "none";
         }
       }
 
-      // --- SUBMIT & SHARE WA ---
+      function fetchAssetById(id) {
+        showLoading("Mengambil Data Aset...");
+        // Cek ID di server
+        fetch(`${APPS_SCRIPT_URL}?action=scan&q=${encodeURIComponent(id)}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.length > 0) {
+              const item = data[0];
+              addToRecent(item); // Masukkan ke history
+              pilihAset(item); // Buka form
+            } else {
+              alert("Aset tidak ditemukan di database MasterData!");
+            }
+          })
+          .catch((err) => alert("Error koneksi: " + err))
+          .finally(() => hideLoading());
+      }
+
+      // --- 4. FORM & SUBMIT ---
+      let currentAsset = null;
+
+      function pilihAset(item) {
+        currentAsset = item;
+        document.getElementById("selectedAssetName").innerText = item.name;
+        document.getElementById("selectedAssetLoc").innerText = item.location;
+        document.getElementById("selectedAssetId").innerText = item.id;
+
+        document.getElementById("patrolListView").style.display = "none";
+        document.getElementById("formLaporanView").style.display = "block";
+
+        // Refresh view recent jika tadi habis search
+        renderList(recentAssets);
+        document.getElementById("searchInput").value = "";
+      }
+
+      function batalLapor() {
+        document.getElementById("formLaporanView").style.display = "none";
+        document.getElementById("patrolListView").style.display = "block";
+      }
+
+      function setStatus(el) {
+        // Helper visual active state radio
+        document.querySelectorAll('input[name="status"]').forEach((r) => (r.parentElement.querySelector("div").style.background = "white"));
+        el.style.background = "#e0f2fe";
+      }
+
       async function submitData() {
         const status = document.querySelector('input[name="status"]:checked').value;
         const catatan = document.getElementById("catatan").value;
-        const file1 = document.getElementById("fotoKondisi").files[0];
-        const file2 = document.getElementById("fotoQR").files[0];
 
-        if (status !== "Normal" && !catatan) {
-          alert("Kondisi Tidak Normal wajib isi catatan!");
-          return;
-        }
-
-        document.getElementById("loadingModal").style.display = "flex";
+        showLoading("Mengirim Laporan...");
 
         try {
-          const base64Img1 = file1 ? await toBase64(file1) : "";
-          const base64Img2 = file2 ? await toBase64(file2) : "";
-
+          // Dummy upload logic (simple text send)
+          // Mas Zaky bisa aktifkan base64 upload di sini jika mau
           const payload = {
             namaAset: currentAsset.name,
             lokasi: currentAsset.location,
             status: status,
             catatan: catatan,
-            fotoKondisi: base64Img1,
-            fotoQR: base64Img2,
             petugas: "Adam Zaky",
             waktu: new Date().toLocaleString(),
+            // fotoKondisi: ... (convert base64 here if needed)
           };
 
-          fetch(APPS_SCRIPT_URL, {
+          await fetch(APPS_SCRIPT_URL, {
             method: "POST",
             body: JSON.stringify(payload),
-          }).catch((err) => console.error("Gagal kirim log", err));
+          });
 
-          await shareToWA(currentAsset.name, status, catatan, file1, file2);
-
-          document.getElementById("loadingModal").style.display = "none";
-          // alert("Laporan Selesai!"); // Opsional, dimatikan biar smooth
-          resetForm();
-          document.getElementById("formLaporanView").style.display = "none";
-          document.getElementById("patrolListView").style.display = "block";
-        } catch (error) {
-          console.error(error);
-          document.getElementById("loadingModal").style.display = "none";
-          alert("Error: " + error.message);
+          alert("Laporan Terkirim!");
+          batalLapor();
+        } catch (e) {
+          alert("Gagal kirim: " + e);
+        } finally {
+          hideLoading();
         }
       }
 
-      async function shareToWA(nama, status, note, f1, f2) {
-        const caption = `*LAPORAN ASET*\n📍 Alat: ${nama}\n🔧 Status: ${status.toUpperCase()}\n📝 Catatan: ${note || "-"}\n👮 Petugas: Adam Zaky`;
-        const filesArray = [];
-        if (f1) filesArray.push(new File([f1], "kondisi.jpg", { type: f1.type }));
-        if (f2) filesArray.push(new File([f2], "qr.jpg", { type: f2.type }));
-
-        if (navigator.canShare && navigator.canShare({ files: filesArray })) {
-          await navigator.share({ text: caption, files: filesArray });
-        } else {
-          window.open(`https://wa.me/?text=${encodeURIComponent(caption)}`, "_blank");
-        }
+      // --- UTILS ---
+      function switchTab(tab, el) {
+        document.querySelectorAll(".tab-section").forEach((t) => t.classList.remove("active"));
+        document.querySelectorAll(".nav-item").forEach((n) => n.classList.remove("active"));
+        document.getElementById("tab-" + tab).classList.add("active");
+        el.classList.add("active");
+        const titles = { patrol: "🛡️ BMS Asset Patrol", tools: "🛠️ IT Tools", log: "📒 Log IT" };
+        document.getElementById("headerTitle").innerText = titles[tab];
       }
 
-      function toBase64(file) {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = () => {
-              const canvas = document.createElement("canvas");
-              const MAX_WIDTH = 800;
-              const scaleSize = MAX_WIDTH / img.width;
-              canvas.width = MAX_WIDTH;
-              canvas.height = img.height * scaleSize;
-              const ctx = canvas.getContext("2d");
-              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-              resolve(canvas.toDataURL("image/jpeg", 0.7));
-            };
-          };
-          reader.onerror = (error) => reject(error);
-        });
+      function showLoading(txt) {
+        document.getElementById("loadingModal").style.display = "flex";
+        document.getElementById("loadingText").innerText = txt;
+      }
+      function hideLoading() {
+        document.getElementById("loadingModal").style.display = "none";
       }
     </script>
   </body>
