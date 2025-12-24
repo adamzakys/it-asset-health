@@ -3,16 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Asset Patrol App</title>
+    <title>BMS IT Super App</title>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+
     <style>
       :root {
-        --primary: #2563eb; /* Biru */
-        --danger: #dc2626; /* Merah */
-        --warning: #f59e0b; /* Kuning */
-        --success: #16a34a; /* Hijau */
+        --primary: #2563eb; /* Biru Utama */
+        --primary-dark: #1e40af;
+        --danger: #dc2626;
+        --warning: #f59e0b;
+        --success: #16a34a;
         --bg: #f8fafc;
         --card: #ffffff;
+        --nav-height: 65px;
       }
 
       body {
@@ -21,16 +25,16 @@
         margin: 0;
         padding: 0;
         color: #1f2937;
+        /* Padding bawah agar konten tidak tertutup navigasi */
+        padding-bottom: calc(var(--nav-height) + 20px);
       }
 
-      /* --- LAYOUT UTAMA --- */
+      /* --- LAYOUT UMUM --- */
       .container {
-        max-width: 480px; /* Lebar HP */
+        max-width: 480px;
         margin: 0 auto;
-        background: var(--bg);
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
+        min-height: 90vh;
+        position: relative;
       }
 
       .header {
@@ -45,20 +49,38 @@
       }
       .header h2 {
         margin: 0;
-        font-size: 1.2rem;
+        font-size: 1.1rem;
       }
       .header p {
         margin: 0;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         opacity: 0.9;
       }
 
-      .content {
-        padding: 1rem;
-        flex: 1;
+      /* --- TAB CONTENT LOGIC --- */
+      .tab-section {
+        display: none; /* Default hidden */
+        animation: fadeIn 0.3s;
+      }
+      .tab-section.active {
+        display: block;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
 
-      /* --- HOMEPAGE (SEARCH & SCAN) --- */
+      /* --- STYLE TAB 1: PATROL --- */
+      .content {
+        padding: 1rem;
+      }
+
       .search-box {
         position: relative;
         margin-bottom: 1rem;
@@ -71,7 +93,6 @@
         font-size: 1rem;
         box-sizing: border-box;
         outline: none;
-        transition: 0.3s;
       }
       .search-input:focus {
         border-color: var(--primary);
@@ -95,11 +116,6 @@
         margin-bottom: 1.5rem;
       }
 
-      .asset-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.8rem;
-      }
       .asset-card {
         background: var(--card);
         padding: 1rem;
@@ -107,6 +123,7 @@
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         cursor: pointer;
         border: 1px solid #e2e8f0;
+        margin-bottom: 0.8rem;
         transition: 0.2s;
       }
       .asset-card:active {
@@ -123,11 +140,10 @@
         margin-top: 0.2rem;
       }
 
-      /* --- FORM PAGE --- */
-      #formPage {
+      /* Style Form Laporan (Sub-bagian dari Patrol) */
+      #formLaporanView {
         display: none;
       }
-
       .form-header {
         background: #dbeafe;
         padding: 1rem;
@@ -157,7 +173,6 @@
         cursor: pointer;
         font-weight: 500;
       }
-      /* Logika Pilihan Status */
       input[type="radio"] {
         display: none;
       }
@@ -183,7 +198,6 @@
         border: 1px solid #cbd5e1;
         border-radius: 8px;
         box-sizing: border-box;
-        font-family: inherit;
         margin-bottom: 1rem;
       }
 
@@ -196,17 +210,17 @@
       .upload-box {
         border: 2px dashed #cbd5e1;
         border-radius: 8px;
-        padding: 1rem 0.5rem;
+        padding: 0.5rem;
         text-align: center;
-        position: relative;
         background: #f8fafc;
         height: 100px;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        font-size: 0.8rem;
+        position: relative;
         color: #64748b;
+        font-size: 0.8rem;
       }
       .upload-box input {
         position: absolute;
@@ -233,7 +247,6 @@
         border-radius: 12px;
         font-weight: bold;
         font-size: 1.1rem;
-        cursor: pointer;
         margin-bottom: 1rem;
       }
       .btn-cancel {
@@ -242,10 +255,104 @@
         border: none;
         width: 100%;
         padding: 0.5rem;
-        cursor: pointer;
       }
 
-      /* --- MODAL SCANNER & LOADING --- */
+      /* --- STYLE TAB 2: IT TOOLS --- */
+      .tool-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.2rem;
+        margin-bottom: 1rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      }
+      .tool-title {
+        font-weight: bold;
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .tool-desc {
+        font-size: 0.9rem;
+        color: #475569;
+        margin-bottom: 1rem;
+        line-height: 1.4;
+      }
+      .command-box {
+        background: #1e293b;
+        color: #a5f3fc;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 0.85rem;
+        word-break: break-all;
+        margin-bottom: 0.8rem;
+        position: relative;
+      }
+      .btn-copy {
+        background: #e2e8f0;
+        color: #334155;
+        border: none;
+        padding: 0.6rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+        justify-content: center;
+      }
+      .btn-copy:active {
+        background: #cbd5e1;
+      }
+
+      /* --- STYLE TAB 3: REQUEST --- */
+      .iframe-container {
+        width: 100%;
+        height: calc(100vh - 130px); /* Full height minus header & nav */
+        border: none;
+        background: white;
+      }
+
+      /* --- BOTTOM NAVIGATION BAR --- */
+      .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: var(--nav-height);
+        background: white;
+        border-top: 1px solid #e2e8f0;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        z-index: 100;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+      }
+      .nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: #94a3b8;
+        font-size: 0.75rem;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .nav-item.active {
+        color: var(--primary);
+        font-weight: 600;
+      }
+      .nav-item .material-icons-round {
+        font-size: 24px;
+        margin-bottom: 4px;
+      }
+
+      /* --- MODALS (Scanner & Loading) --- */
       #scannerModal,
       #loadingModal {
         position: fixed;
@@ -254,7 +361,7 @@
         width: 100%;
         height: 100%;
         background: rgba(0, 0, 0, 0.9);
-        z-index: 99;
+        z-index: 200;
         display: none;
         flex-direction: column;
         justify-content: center;
@@ -283,69 +390,115 @@
     </style>
   </head>
   <body>
-    <div class="container" id="homePage">
+    <div class="container">
       <div class="header">
-        <h2>🛡️ Asset Patrol</h2>
+        <h2 id="headerTitle">🛡️ BMS Asset Patrol</h2>
         <p>Adam Zaky • MagangHub</p>
       </div>
-      <div class="content">
-        <button class="btn-scan" onclick="startScanner()">📸 Scan QR Code</button>
 
-        <div class="search-box">
-          <input type="text" class="search-input" id="searchInput" placeholder="🔍 Cari nama aset manual..." onkeyup="filterAssets()" />
+      <div id="tab-patrol" class="tab-section active">
+        <div id="patrolListView" class="content">
+          <button class="btn-scan" onclick="startScanner()"><span class="material-icons-round">qr_code_scanner</span> Scan QR Code</button>
+
+          <div class="search-box">
+            <input type="text" class="search-input" id="searchInput" placeholder="🔍 Cari nama aset manual..." onkeyup="filterAssets()" />
+          </div>
+
+          <div id="assetListContainer"></div>
         </div>
 
-        <div class="asset-list" id="assetListContainer"></div>
+        <div id="formLaporanView" class="content">
+          <div class="form-header">
+            <div class="asset-name" id="selectedAssetName">Nama Aset</div>
+            <div class="asset-loc" id="selectedAssetLoc">Lokasi</div>
+            <small style="color: var(--primary)">ID: <span id="selectedAssetId"></span></small>
+          </div>
+
+          <label class="label">Kondisi Perangkat</label>
+          <div class="status-grid">
+            <label>
+              <input type="radio" name="status" value="Normal" checked />
+              <div class="status-opt" data-val="Normal">🟢<br />Normal</div>
+            </label>
+            <label>
+              <input type="radio" name="status" value="Maintenance" />
+              <div class="status-opt" data-val="Maintenance">🟡<br />Perlu Cek</div>
+            </label>
+            <label>
+              <input type="radio" name="status" value="Rusak" />
+              <div class="status-opt" data-val="Rusak">🔴<br />Rusak</div>
+            </label>
+          </div>
+
+          <label class="label">Catatan / Kendala</label>
+          <textarea id="catatan" rows="3" placeholder="Contoh: Lensa buram, kabel putus, dll..."></textarea>
+
+          <div class="upload-grid">
+            <div class="upload-box">
+              <span id="txt1">📸 Foto Bukti<br />(Kondisi)</span>
+              <img id="prev1" class="preview-img" />
+              <input type="file" id="fotoKondisi" accept="image/*" capture="environment" onchange="previewImage(this, 'prev1', 'txt1')" />
+            </div>
+            <div class="upload-box">
+              <span id="txt2">📷 Foto QR<br />(Label Aset)</span>
+              <img id="prev2" class="preview-img" />
+              <input type="file" id="fotoQR" accept="image/*" capture="environment" onchange="previewImage(this, 'prev2', 'txt2')" />
+            </div>
+          </div>
+
+          <button class="btn-submit" onclick="submitData()">💾 Simpan & Share WA</button>
+          <button class="btn-cancel" onclick="batalLapor()">Batal</button>
+        </div>
+      </div>
+
+      <div id="tab-tools" class="tab-section">
+        <div class="content">
+          <div class="tool-card">
+            <div class="tool-title">
+              <span class="material-icons-round">cleaning_services</span>
+              Auto Clean & Fix
+            </div>
+            <div class="tool-desc">Script otomatis untuk membersihkan Temp, Prefetch, dan Cache Windows yang memberatkan PC.</div>
+
+            <div style="background: #f1f5f9; padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 10px">
+              <strong>Instruksi:</strong><br />
+              1. Buka <b>CMD / PowerShell</b> (Run as Administrator).<br />
+              2. Ketik/Paste perintah di bawah ini lalu Enter.
+            </div>
+
+            <div class="command-box" id="cmd1">powershell -ep bypass -c "irm s.id/zakautoclean | iex"</div>
+
+            <button class="btn-copy" onclick="copyText('cmd1')"><span class="material-icons-round">content_copy</span> Copy Script</button>
+          </div>
+
+          <div class="tool-card" style="opacity: 0.7">
+            <div class="tool-title">
+              <span class="material-icons-round">build</span>
+              Network Reset (Segera Hadir)
+            </div>
+            <div class="tool-desc">Reset IP, Flush DNS, dan reset Winsock otomatis.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-request" class="tab-section">
+        <iframe src="https://forms.office.com/pages/responsepage.aspx?id=KLtAVeyfj06mOaTCvGmbz79ARk5a-2JFt3WedBEs_kVUMVBFWkpTTkhLUEwxNFA2WFZVWlg2WFg5US4u&route=shorturl" class="iframe-container" allowfullscreen> </iframe>
       </div>
     </div>
-
-    <div class="container" id="formPage">
-      <div class="header" style="background: #1e293b">
-        <h2>📝 Isi Laporan</h2>
+    <nav class="bottom-nav">
+      <div class="nav-item active" onclick="switchTab('patrol', this)">
+        <span class="material-icons-round">admin_panel_settings</span>
+        <span>Patrol</span>
       </div>
-      <div class="content">
-        <div class="form-header">
-          <div class="asset-name" id="selectedAssetName">Nama Aset</div>
-          <div class="asset-loc" id="selectedAssetLoc">Lokasi</div>
-          <small style="color: var(--primary)">ID: <span id="selectedAssetId"></span></small>
-        </div>
-
-        <label class="label">Kondisi Perangkat</label>
-        <div class="status-grid">
-          <label>
-            <input type="radio" name="status" value="Normal" checked />
-            <div class="status-opt" data-val="Normal">🟢<br />Normal</div>
-          </label>
-          <label>
-            <input type="radio" name="status" value="Maintenance" />
-            <div class="status-opt" data-val="Maintenance">🟡<br />Perlu Cek</div>
-          </label>
-          <label>
-            <input type="radio" name="status" value="Rusak" />
-            <div class="status-opt" data-val="Rusak">🔴<br />Rusak</div>
-          </label>
-        </div>
-
-        <label class="label">Catatan / Kendala</label>
-        <textarea id="catatan" rows="3" placeholder="Contoh: Lensa buram, kabel putus, dll..."></textarea>
-
-        <div class="upload-grid">
-          <div class="upload-box">
-            <span id="txt1">📸 Foto Bukti<br />(Kondisi)</span>
-            <img id="prev1" class="preview-img" />
-            <input type="file" id="fotoKondisi" accept="image/*" capture="environment" onchange="previewImage(this, 'prev1', 'txt1')" />
-          </div>
-          <div class="upload-box">
-            <span id="txt2">📷 Foto QR<br />(Label Aset)</span>
-            <img id="prev2" class="preview-img" />
-            <input type="file" id="fotoQR" accept="image/*" capture="environment" onchange="previewImage(this, 'prev2', 'txt2')" />
-          </div>
-        </div>
-
-        <button class="btn-submit" onclick="submitData()">💾 Simpan & Share WA</button>
-        <button class="btn-cancel" onclick="batalLapor()">Batal</button>
+      <div class="nav-item" onclick="switchTab('tools', this)">
+        <span class="material-icons-round">construction</span>
+        <span>Tools</span>
       </div>
-    </div>
+      <div class="nav-item" onclick="switchTab('request', this)">
+        <span class="material-icons-round">assignment</span>
+        <span>Request</span>
+      </div>
+    </nav>
 
     <div id="scannerModal">
       <div style="color: white; margin-bottom: 1rem">Arahkan ke QR Code</div>
@@ -359,19 +512,46 @@
     </div>
 
     <script>
-      // --- KONFIGURASI UTAMA ---
-      const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIMP9_q2245Gta50V8210719xHR5ezbScmsMsZSutVp7kbwPxe23Kqp2t1bfl_az0H/exec"; // Link Mas Zaky
+      // --- KONFIGURASI ---
+      const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIMP9_q2245Gta50V8210719xHR5ezbScmsMsZSutVp7kbwPxe23Kqp2t1bfl_az0H/exec";
 
-      // --- DATA ASET (DUMP) ---
-      // Nanti bisa ditambah sesuai kebutuhan lapangan
+      // --- LOGIKA NAVIGASI TAB ---
+      function switchTab(tabName, navElement) {
+        // 1. Hide semua tab
+        document.querySelectorAll(".tab-section").forEach((el) => el.classList.remove("active"));
+        // 2. Reset nav active state
+        document.querySelectorAll(".nav-item").forEach((el) => el.classList.remove("active"));
+
+        // 3. Show tab yang dipilih
+        document.getElementById("tab-" + tabName).classList.add("active");
+        // 4. Set nav aktif
+        navElement.classList.add("active");
+
+        // 5. Ganti Judul Header
+        const titles = {
+          patrol: "🛡️ BMS Asset Patrol",
+          tools: "🛠️ IT Utility Tools",
+          request: "📝 Form Perbaikan",
+        };
+        document.getElementById("headerTitle").innerText = titles[tabName];
+      }
+
+      // --- LOGIKA COPY TEXT (IT TOOLS) ---
+      function copyText(elementId) {
+        const text = document.getElementById(elementId).innerText.trim();
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            alert("Script tersalin! Silakan paste di CMD/PowerShell.");
+          })
+          .catch((err) => {
+            alert("Gagal menyalin otomatis. Silakan blok teks dan copy manual.");
+          });
+      }
+
+      // --- LOGIKA ASSET (SAMA SEPERTI SEBELUMNYA) ---
       const assetList = [
-        // --- Data Asli Lapangan (Dari Foto Label) ---
-        {
-          // ID ini HARUS SAMA PERSIS dengan teks yang muncul di pesan error tadi
-          id: "2MO37/TIK/Port/2024",
-          name: "Monitor (2MO37)",
-          location: "Divisi TIK/Port",
-        },
+        { id: "2MO37/TIK/Port/2024", name: "Monitor (2MO37)", location: "Divisi TIK/Port" },
         { id: "A001-ex", name: "CCTV LPR - Gate In 1", location: "Gate In 1 (Utama)" },
         { id: "A002-ex", name: "Barrier Gate - Gate In 1", location: "Gate In 1 (Utama)" },
         { id: "A003-ex", name: "Manless Box Ticket", location: "Gate In 1 (Utama)" },
@@ -382,30 +562,26 @@
         { id: "C002-ex", name: "Wifi Access Point Lobby", location: "Lobby Gedung" },
       ];
 
-      // --- 1. LOGIKA SEARCH & UI ---
-
       function renderAssets(data) {
         const container = document.getElementById("assetListContainer");
         container.innerHTML = "";
-
         if (data.length === 0) {
           container.innerHTML = '<div style="text-align:center; padding:1rem; color:#999;">Aset tidak ditemukan</div>';
           return;
         }
-
         data.forEach((item) => {
           const card = document.createElement("div");
           card.className = "asset-card";
           card.onclick = () => pilihAset(item);
           card.innerHTML = `
-                    <div class="asset-name">${item.name}</div>
-                    <div class="asset-loc">📍 ${item.location} <span style="font-size:0.7rem; background:#eee; padding:2px 4px; border-radius:4px; margin-left:5px;">${item.id}</span></div>
-                `;
+            <div class="asset-name">${item.name}</div>
+            <div class="asset-loc">📍 ${item.location} <span style="font-size:0.7rem; background:#eee; padding:2px 4px; border-radius:4px; margin-left:5px;">${item.id}</span></div>
+          `;
           container.appendChild(card);
         });
       }
 
-      // Tampilkan semua di awal
+      // Render awal
       renderAssets(assetList);
 
       function filterAssets() {
@@ -414,28 +590,27 @@
         renderAssets(filtered);
       }
 
-      // --- 2. LOGIKA FORMULIR ---
-
+      // --- LOGIKA FORMULIR & SCANNER ---
       let currentAsset = null;
+      let html5QrcodeScanner = null;
 
       function pilihAset(item) {
         currentAsset = item;
-        // Isi Data ke Form
         document.getElementById("selectedAssetName").innerText = item.name;
         document.getElementById("selectedAssetLoc").innerText = item.location;
         document.getElementById("selectedAssetId").innerText = item.id;
 
-        // Ganti Halaman
-        document.getElementById("homePage").style.display = "none";
-        document.getElementById("formPage").style.display = "block";
+        // Switch view di dalam tab Patrol
+        document.getElementById("patrolListView").style.display = "none";
+        document.getElementById("formLaporanView").style.display = "block";
         window.scrollTo(0, 0);
       }
 
       function batalLapor() {
-        if (confirm("Batalkan laporan? Data yang diisi akan hilang.")) {
+        if (confirm("Batalkan laporan?")) {
           resetForm();
-          document.getElementById("formPage").style.display = "none";
-          document.getElementById("homePage").style.display = "block";
+          document.getElementById("formLaporanView").style.display = "none";
+          document.getElementById("patrolListView").style.display = "block";
         }
       }
 
@@ -462,37 +637,26 @@
         }
       }
 
-      // --- 3. LOGIKA QR SCANNER (Library) ---
-      let html5QrcodeScanner = null;
-
       function startScanner() {
         document.getElementById("scannerModal").style.display = "flex";
         html5QrcodeScanner = new Html5Qrcode("reader");
-
-        // Start kamera
         html5QrcodeScanner
           .start(
-            { facingMode: "environment" }, // Kamera belakang
+            { facingMode: "environment" },
             { fps: 10, qrbox: { width: 250, height: 250 } },
             (decodedText) => {
-              // SUKSES SCAN
               stopScanner();
-              // Cek apakah ID ada di database kita?
               const found = assetList.find((a) => a.id === decodedText || decodedText.includes(a.id));
               if (found) {
-                alert(`Aset Ditemukan: ${found.name}`);
                 pilihAset(found);
               } else {
-                // Jika QR tidak terdaftar, anggap manual search (atau bisa dibuat mode tambah baru)
-                alert(`QR Terbaca: ${decodedText}\nTapi data tidak ada di list lokal. Silakan cari manual.`);
+                alert(`QR Terbaca: ${decodedText}\nData tidak ada di list lokal.`);
               }
             },
-            (errorMessage) => {
-              // Ignore error scanning frame
-            }
+            (errorMessage) => {}
           )
           .catch((err) => {
-            alert("Gagal membuka kamera. Pastikan izin browser aktif/HTTPS.");
+            alert("Gagal membuka kamera.");
             stopScanner();
           });
       }
@@ -508,88 +672,67 @@
         }
       }
 
-      // --- 4. LOGIKA SUBMIT & SHARE WA (CORE) ---
-
+      // --- SUBMIT & SHARE WA ---
       async function submitData() {
-        // Validasi
         const status = document.querySelector('input[name="status"]:checked').value;
         const catatan = document.getElementById("catatan").value;
         const file1 = document.getElementById("fotoKondisi").files[0];
         const file2 = document.getElementById("fotoQR").files[0];
 
         if (status !== "Normal" && !catatan) {
-          alert("Jika kondisi Tidak Normal, wajib isi catatan!");
+          alert("Kondisi Tidak Normal wajib isi catatan!");
           return;
         }
 
-        // Tampilkan Loading
         document.getElementById("loadingModal").style.display = "flex";
 
         try {
-          // A. Convert Gambar ke Base64 (Untuk dikirim ke Google Sheets)
           const base64Img1 = file1 ? await toBase64(file1) : "";
           const base64Img2 = file2 ? await toBase64(file2) : "";
 
-          // B. Kirim ke Google Apps Script (Background)
           const payload = {
             namaAset: currentAsset.name,
             lokasi: currentAsset.location,
             status: status,
             catatan: catatan,
-            fotoKondisi: base64Img1, // String panjang
-            fotoQR: base64Img2, // String panjang
+            fotoKondisi: base64Img1,
+            fotoQR: base64Img2,
             petugas: "Adam Zaky",
             waktu: new Date().toLocaleString(),
           };
 
-          // Kita pakai 'no-cors' agar browser tidak memblokir,
-          // tapi kita tidak bisa baca responsenya (fire and forget)
-          // ATAU pakai standard fetch jika Apps Script sudah 'Anyone' access
-
           fetch(APPS_SCRIPT_URL, {
             method: "POST",
             body: JSON.stringify(payload),
-          })
-            .then((res) => console.log("Data terkirim ke server"))
-            .catch((err) => console.error("Gagal kirim ke server", err));
+          }).catch((err) => console.error("Gagal kirim log", err));
 
-          // C. Share ke WhatsApp (Pake Web Share API)
           await shareToWA(currentAsset.name, status, catatan, file1, file2);
 
-          // Selesai
           document.getElementById("loadingModal").style.display = "none";
-          alert("Laporan Selesai!");
+          // alert("Laporan Selesai!"); // Opsional, dimatikan biar smooth
           resetForm();
-          document.getElementById("formPage").style.display = "none";
-          document.getElementById("homePage").style.display = "block";
+          document.getElementById("formLaporanView").style.display = "none";
+          document.getElementById("patrolListView").style.display = "block";
         } catch (error) {
           console.error(error);
           document.getElementById("loadingModal").style.display = "none";
-          alert("Terjadi kesalahan: " + error.message);
+          alert("Error: " + error.message);
         }
       }
 
-      // Fungsi Share Native
       async function shareToWA(nama, status, note, f1, f2) {
-        const caption = `*LAPORAN ASET*\n` + `📍 Alat: ${nama}\n` + `🔧 Status: ${status.toUpperCase()}\n` + `📝 Catatan: ${note || "-"}\n` + `👮 Petugas: Adam Zaky`;
-
+        const caption = `*LAPORAN ASET*\n📍 Alat: ${nama}\n🔧 Status: ${status.toUpperCase()}\n📝 Catatan: ${note || "-"}\n👮 Petugas: Adam Zaky`;
         const filesArray = [];
         if (f1) filesArray.push(new File([f1], "kondisi.jpg", { type: f1.type }));
-        if (f2) filesArray.push(new File([f2], "qr_konteks.jpg", { type: f2.type }));
+        if (f2) filesArray.push(new File([f2], "qr.jpg", { type: f2.type }));
 
         if (navigator.canShare && navigator.canShare({ files: filesArray })) {
-          await navigator.share({
-            text: caption,
-            files: filesArray,
-          });
+          await navigator.share({ text: caption, files: filesArray });
         } else {
-          // Fallback jika tidak support share file (Desktop/HTTP biasa)
-          const waUrl = `https://wa.me/?text=${encodeURIComponent(caption)}`;
-          window.open(waUrl, "_blank");
+          window.open(`https://wa.me/?text=${encodeURIComponent(caption)}`, "_blank");
         }
       }
 
-      // Helper Convert Base64 (dengan Kompresi Sederhana via Canvas)
       function toBase64(file) {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -598,19 +741,14 @@
             const img = new Image();
             img.src = event.target.result;
             img.onload = () => {
-              // Resize biar gak kegedean (Max 800px)
               const canvas = document.createElement("canvas");
               const MAX_WIDTH = 800;
               const scaleSize = MAX_WIDTH / img.width;
               canvas.width = MAX_WIDTH;
               canvas.height = img.height * scaleSize;
-
               const ctx = canvas.getContext("2d");
               ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-              // Convert ke JPEG quality 0.7
-              const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-              resolve(dataUrl);
+              resolve(canvas.toDataURL("image/jpeg", 0.7));
             };
           };
           reader.onerror = (error) => reject(error);
