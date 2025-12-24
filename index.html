@@ -1,663 +1,210 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="bg-slate-50">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>BMS IT Super App</title>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <title>BMS Asset Pro v2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
-
-    <style>
-      :root {
-        --primary: #2563eb;
-        --bg: #f8fafc;
-        --card: #ffffff;
-        --nav-height: 65px;
-      }
-      body {
-        font-family: sans-serif;
-        background: var(--bg);
-        margin: 0;
-        padding-bottom: 90px;
-        color: #1f2937;
-      }
-
-      .container {
-        max-width: 480px;
-        margin: 0 auto;
-        min-height: 90vh;
-      }
-      .header {
-        background: var(--primary);
-        color: white;
-        padding: 1rem;
-        text-align: center;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-      }
-      .header h2 {
-        margin: 0;
-        font-size: 1.1rem;
-      }
-
-      /* TAB SECTIONS */
-      .tab-section {
-        display: none;
-        padding: 1rem;
-      }
-      .tab-section.active {
-        display: block;
-        animation: fadeIn 0.3s;
-      }
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(5px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      /* SEARCH & LIST */
-      .search-wrapper {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 1rem;
-      }
-      .search-input {
-        flex: 1;
-        padding: 0.8rem;
-        border: 2px solid #e2e8f0;
-        border-radius: 10px;
-        font-size: 1rem;
-        outline: none;
-      }
-      .btn-search {
-        background: var(--primary);
-        color: white;
-        border: none;
-        padding: 0 1rem;
-        border-radius: 10px;
-        cursor: pointer;
-      }
-
-      .btn-scan {
-        background: var(--primary);
-        color: white;
-        width: 100%;
-        padding: 1rem;
-        border: none;
-        border-radius: 12px;
-        font-weight: bold;
-        font-size: 1rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
-      }
-
-      .section-label {
-        font-size: 0.85rem;
-        font-weight: bold;
-        color: #64748b;
-        margin-bottom: 0.5rem;
-        display: flex;
-        justify-content: space-between;
-      }
-
-      .asset-card {
-        background: white;
-        padding: 1rem;
-        border-radius: 10px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        border: 1px solid #e2e8f0;
-        margin-bottom: 0.8rem;
-        cursor: pointer;
-      }
-      .asset-card:active {
-        border-color: var(--primary);
-        background: #eff6ff;
-      }
-      .asset-name {
-        font-weight: 600;
-        font-size: 1rem;
-      }
-      .asset-loc {
-        color: #64748b;
-        font-size: 0.85rem;
-        margin-top: 4px;
-      }
-      .asset-date {
-        font-size: 0.75rem;
-        color: #94a3b8;
-        margin-top: 6px;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      }
-
-      /* FORM STYLE */
-      #formLaporanView {
-        display: none;
-      }
-      .form-header {
-        background: #dbeafe;
-        padding: 1rem;
-        border-radius: 12px;
-        margin-bottom: 1.5rem;
-        border-left: 5px solid var(--primary);
-      }
-      textarea,
-      input[type="text"] {
-        width: 100%;
-        box-sizing: border-box;
-      }
-      textarea {
-        padding: 0.8rem;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-      }
-
-      .btn-submit {
-        background: #16a34a;
-        color: white;
-        width: 100%;
-        padding: 1rem;
-        border: none;
-        border-radius: 12px;
-        font-weight: bold;
-        margin-bottom: 1rem;
-      }
-      .btn-cancel {
-        background: transparent;
-        color: #64748b;
-        border: none;
-        width: 100%;
-        padding: 0.5rem;
-      }
-
-      /* NAV & MODALS */
-      .bottom-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: var(--nav-height);
-        background: white;
-        border-top: 1px solid #e2e8f0;
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        z-index: 100;
-      }
-      .nav-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: #94a3b8;
-        font-size: 0.75rem;
-      }
-      .nav-item.active {
-        color: var(--primary);
-        font-weight: 600;
-      }
-      .material-icons-round {
-        font-size: 24px;
-        margin-bottom: 4px;
-      }
-
-      #scannerModal,
-      #loadingModal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.9);
-        z-index: 200;
-        display: none;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        color: white;
-      }
-      .spinner {
-        width: 40px;
-        height: 40px;
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid var(--primary);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      }
-      @keyframes spin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-
-      /* Tools & Log Style */
-      .tool-card {
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 1rem;
-        margin-bottom: 1rem;
-      }
-      .cmd-box {
-        background: #1e293b;
-        color: #a5f3fc;
-        padding: 0.8rem;
-        border-radius: 6px;
-        font-family: monospace;
-        font-size: 0.8rem;
-        word-break: break-all;
-        margin: 0.5rem 0;
-      }
-    </style>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <link rel="stylesheet" href="style.css" />
+    <script>
+      tailwind.config = {
+        theme: { extend: { colors: { primary: "#0f172a", accent: "#3b82f6" } } },
+      };
+    </script>
   </head>
-  <body>
-    <div class="container">
-      <div class="header">
-        <h2 id="headerTitle">🛡️ BMS Asset Patrol</h2>
-        <p>Full Online • Recent History</p>
+  <body class="text-slate-800 antialiased pb-28 select-none">
+    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex justify-between items-center shadow-sm">
+      <div>
+        <h1 class="text-lg font-bold text-primary" id="headerTitle">Beranda</h1>
+        <p class="text-[10px] text-slate-500 uppercase tracking-widest">IT Operations</p>
       </div>
+    </header>
 
-      <div id="tab-patrol" class="tab-section active">
-        <div id="patrolListView">
-          <button class="btn-scan" onclick="startScanner()"><span class="material-icons-round">qr_code_scanner</span> Scan QR Code</button>
+    <main class="max-w-md mx-auto p-4 min-h-[80vh]">
+      <section id="tab-home" class="tab-section active space-y-6">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+          <div class="bg-blue-50 p-3 rounded-full text-accent">
+            <span class="material-icons-round text-3xl">face</span>
+          </div>
+          <div class="flex-1">
+            <p class="text-xs text-slate-400 font-medium">Petugas Login</p>
+            <h2 class="text-lg font-bold text-primary flex items-center gap-2 cursor-pointer" onclick="ubahNamaUser()">
+              <span id="userNameDisplay">...</span>
+              <span class="material-icons-round text-sm text-slate-300">edit</span>
+            </h2>
+          </div>
+        </div>
 
-          <div class="search-wrapper">
-            <input type="text" class="search-input" id="searchInput" placeholder="Cari nama aset / lokasi..." />
-            <button class="btn-search" onclick="doSearch()">
+        <div>
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Riwayat Aktivitas</h3>
+            <button onclick="clearLog()" class="text-[10px] text-red-500 font-bold hover:underline">CLEAR</button>
+          </div>
+          <div id="unifiedActivityLog" class="space-y-3"></div>
+        </div>
+      </section>
+
+      <section id="tab-patrol" class="tab-section hidden">
+        <div id="patrol-list-view">
+          <div class="flex gap-2 mb-4">
+            <input type="text" id="searchInput" class="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent shadow-sm" placeholder="🔍 Cari aset manual..." />
+
+            <button onclick="doSearch()" class="bg-slate-100 text-slate-600 px-3 rounded-xl hover:bg-slate-200 active:scale-95 transition-transform">
               <span class="material-icons-round">search</span>
+            </button>
+
+            <button onclick="openModal('modalAddAsset')" class="bg-primary text-white px-3 rounded-xl shadow-md active:scale-95 transition-transform flex items-center justify-center">
+              <span class="material-icons-round">add</span>
             </button>
           </div>
 
-          <div class="section-label">
-            <span id="listLabel">🕐 Terakhir Dilihat (Recent)</span>
-            <span style="color: var(--primary); cursor: pointer" onclick="clearRecent()">Hapus</span>
+          <div id="asset-results" class="space-y-3 pb-20">
+            <div class="text-center p-8 text-slate-400 text-sm">
+              <span class="material-icons-round text-4xl opacity-20 block mb-2">search</span>
+              Silakan Scan QR atau Cari Aset
+            </div>
           </div>
-          <div id="assetListContainer"></div>
         </div>
 
-        <div id="formLaporanView">
-          <div class="form-header">
-            <div class="asset-name" id="selectedAssetName">...</div>
-            <div class="asset-loc" id="selectedAssetLoc">...</div>
-            <small style="color: var(--primary)">ID: <span id="selectedAssetId">...</span></small>
-          </div>
-
-          <label style="font-weight: 600; display: block; margin-bottom: 0.5rem">Kondisi</label>
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem">
-            <label
-              ><input type="radio" name="status" value="Normal" checked hidden />
-              <div class="asset-card" style="text-align: center; margin: 0" onclick="setStatus(this)">🟢<br />Normal</div></label
-            >
-            <label
-              ><input type="radio" name="status" value="Maintenance" hidden />
-              <div class="asset-card" style="text-align: center; margin: 0" onclick="setStatus(this)">🟡<br />Cek</div></label
-            >
-            <label
-              ><input type="radio" name="status" value="Rusak" hidden />
-              <div class="asset-card" style="text-align: center; margin: 0" onclick="setStatus(this)">🔴<br />Rusak</div></label
-            >
-          </div>
-
-          <textarea id="catatan" rows="3" placeholder="Catatan kendala..."></textarea>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem">
-            <div style="border: 2px dashed #ccc; padding: 10px; text-align: center; border-radius: 8px" onclick="document.getElementById('fotoKondisi').click()">
-              📸 Foto Kondisi <input type="file" id="fotoKondisi" hidden accept="image/*" capture="environment" />
-            </div>
-            <div style="border: 2px dashed #ccc; padding: 10px; text-align: center; border-radius: 8px" onclick="document.getElementById('fotoQR').click()">
-              📷 Foto QR <input type="file" id="fotoQR" hidden accept="image/*" capture="environment" />
+        <div id="patrol-form-view" class="hidden bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden animate-slide-up">
+          <div class="bg-slate-50 p-4 border-b border-slate-100">
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="font-bold text-lg text-primary" id="formAssetName">Nama Aset</h3>
+                <p class="text-xs text-slate-500 flex items-center gap-1 mt-1"><span class="material-icons-round text-xs">place</span> <span id="formAssetLoc">Lokasi</span></p>
+                <span class="text-[10px] bg-slate-200 px-2 rounded mt-1 inline-block" id="formAssetId">ID</span>
+              </div>
+              <button onclick="closeForm()" class="text-slate-400 hover:text-slate-600"><span class="material-icons-round">close</span></button>
             </div>
           </div>
 
-          <button class="btn-submit" onclick="submitData()">💾 Simpan Laporan</button>
-          <button class="btn-cancel" onclick="batalLapor()">Kembali</button>
-        </div>
-      </div>
-
-      <div id="tab-tools" class="tab-section">
-        <div class="content">
-          <div class="tool-card">
-            <div class="tool-title">
-              <span class="material-icons-round">cleaning_services</span>
-              Auto Clean & Fix
-            </div>
-            <div class="tool-desc">Script otomatis untuk membersihkan Temp, Prefetch, dan Cache Windows yang memberatkan PC.</div>
-
-            <div style="background: #f1f5f9; padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 10px; border-left: 4px solid var(--primary)">
-              <strong>Cara 1 (Copy Paste):</strong><br />
-              1. Buka <b>CMD / PowerShell</b> (Run as Administrator).<br />
-              2. Copy perintah di bawah & Paste di CMD.
+          <div class="p-4 space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Kondisi</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button onclick="setStatus('Normal', this)" class="status-btn active border rounded-xl p-2 text-center text-xs font-medium transition-colors border-emerald-500 bg-emerald-50 text-emerald-700">Normal</button>
+                <button onclick="setStatus('Maintenance', this)" class="status-btn border rounded-xl p-2 text-center text-xs font-medium transition-colors border-slate-200 text-slate-500">Cek</button>
+                <button onclick="setStatus('Rusak', this)" class="status-btn border rounded-xl p-2 text-center text-xs font-medium transition-colors border-slate-200 text-slate-500">Rusak</button>
+              </div>
+              <input type="hidden" id="statusInput" value="Normal" />
             </div>
 
-            <div class="cmd-box" id="cmd1">powershell -ep bypass -c "irm s.id/zakautoclean | iex"</div>
-
-            <button class="btn-copy" onclick="copyText('cmd1')" style="margin-bottom: 1.5rem"><span class="material-icons-round">content_copy</span> Copy Script</button>
-
-            <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin-bottom: 1.5rem" />
-
-            <div style="background: #f1f5f9; padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 10px; border-left: 4px solid #f59e0b">
-              <strong>Cara 2 (Scan Link):</strong><br />
-              Scan QR ini untuk mendapatkan link download script langsung.
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Catatan</label>
+              <textarea id="catatanInput" rows="2" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:border-accent" placeholder="Keterangan kendala..."></textarea>
             </div>
 
-            <div style="text-align: center">
-              <img src="https://qrtiger.com/temp/1766552709461.png" alt="QR Code Script" style="width: 150px; height: 150px; border: 1px solid #e2e8f0; padding: 5px; border-radius: 8px" />
-              <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 5px">s.id/zakautoclean</p>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="relative h-24 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden">
+                <span class="material-icons-round text-slate-300">camera_alt</span>
+                <span class="text-[10px] text-slate-400">Kondisi</span>
+                <img id="prev_img1" class="absolute inset-0 w-full h-full object-cover hidden" />
+                <input type="file" id="file_img1" accept="image/*" capture="environment" class="absolute inset-0 opacity-0 cursor-pointer" onchange="previewImg(this, 'prev_img1')" />
+              </div>
+              <div class="relative h-24 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden">
+                <span class="material-icons-round text-slate-300">qr_code</span>
+                <span class="text-[10px] text-slate-400">Label</span>
+                <img id="prev_img2" class="absolute inset-0 w-full h-full object-cover hidden" />
+                <input type="file" id="file_img2" accept="image/*" capture="environment" class="absolute inset-0 opacity-0 cursor-pointer" onchange="previewImg(this, 'prev_img2')" />
+              </div>
             </div>
-          </div>
 
-          <div class="tool-card" style="opacity: 0.7">
-            <div class="tool-title">
-              <span class="material-icons-round">build</span>
-              Network Reset (Coming Soon)
-            </div>
-            <div class="tool-desc">Reset IP, Flush DNS, dan reset Winsock otomatis.</div>
+            <button onclick="submitLaporan()" class="w-full bg-primary text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-900/20 active:scale-95 transition-transform">Kirim Laporan</button>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div id="tab-log" class="tab-section" style="text-align: center; padding-top: 2rem">
-        <span class="material-icons-round" style="font-size: 48px; color: #ccc">history_edu</span>
-        <h3>Coming Soon</h3>
-        <p style="color: #666">Modul E-Logbook IT (FR-TI-04) sedang disiapkan.</p>
-      </div>
-    </div>
+      <section id="tab-tools" class="tab-section hidden space-y-4">
+        <div class="flex justify-between items-center">
+          <h3 class="font-bold text-slate-600">Daftar Tools</h3>
+          <button onclick="openToolModal()" class="text-xs bg-blue-50 text-accent px-3 py-1 rounded-full font-bold border border-blue-100">+ Tambah Tool</button>
+        </div>
 
-    <nav class="bottom-nav">
-      <div class="nav-item active" onclick="switchTab('patrol', this)"><span class="material-icons-round">admin_panel_settings</span>Patrol</div>
-      <div class="nav-item" onclick="switchTab('tools', this)"><span class="material-icons-round">construction</span>Tools</div>
-      <div class="nav-item" onclick="switchTab('log', this)"><span class="material-icons-round">history_edu</span>Log IT</div>
+        <div id="toolsContainer" class="space-y-4 pb-20"></div>
+      </section>
+
+      <section id="tab-log" class="tab-section hidden text-center pt-10">
+        <span class="material-icons-round text-5xl text-slate-200">history_edu</span>
+        <p class="text-slate-400 text-sm mt-2">Logbook Harian (Coming Soon)</p>
+      </section>
+    </main>
+
+    <nav class="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur border-t border-slate-200 h-16 z-50">
+      <div class="max-w-md mx-auto grid grid-cols-5 h-full relative">
+        <button class="nav-btn active" onclick="switchTab('home', this)"><span class="material-icons-round text-2xl">home</span><span class="text-[9px] font-bold">Beranda</span></button>
+        <button class="nav-btn" onclick="switchTab('patrol', this)"><span class="material-icons-round text-2xl">admin_panel_settings</span><span class="text-[9px] font-bold">Patrol</span></button>
+
+        <div class="relative flex justify-center">
+          <button onclick="startScanner()" class="absolute -top-6 bg-accent text-white w-14 h-14 rounded-full shadow-xl shadow-blue-500/40 border-4 border-slate-50 flex items-center justify-center active:scale-90 transition-transform">
+            <span class="material-icons-round text-3xl">qr_code_scanner</span>
+          </button>
+          <span class="absolute bottom-1 text-[9px] text-slate-400 font-bold">Scan</span>
+        </div>
+
+        <button class="nav-btn" onclick="switchTab('tools', this)"><span class="material-icons-round text-2xl">construction</span><span class="text-[9px] font-bold">Tools</span></button>
+        <button class="nav-btn" onclick="switchTab('log', this)"><span class="material-icons-round text-2xl">history_edu</span><span class="text-[9px] font-bold">Log</span></button>
+      </div>
     </nav>
 
-    <div id="scannerModal">
-      <div style="margin-bottom: 1rem">Arahkan ke QR Code</div>
-      <div id="reader" style="width: 300px"></div>
-      <button class="btn-cancel" style="color: white; margin-top: 1rem" onclick="stopScanner()">Tutup</button>
+    <div id="modalScanner" class="fixed inset-0 bg-black z-[100] hidden flex-col">
+      <div class="flex-1 relative bg-black">
+        <div id="reader" class="w-full h-full"></div>
+        <div class="absolute inset-0 border-[50px] border-black/50 pointer-events-none flex items-center justify-center">
+          <div class="w-64 h-64 border-2 border-white/50 rounded-xl relative">
+            <div class="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-accent"></div>
+            <div class="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-accent"></div>
+            <div class="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-accent"></div>
+            <div class="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-accent"></div>
+          </div>
+        </div>
+      </div>
+      <div class="p-6 bg-black flex justify-between items-center text-white">
+        <p class="text-sm opacity-80">Scan QR Aset</p>
+        <button onclick="stopScanner()" class="bg-white/20 px-4 py-2 rounded-full text-sm font-bold">Tutup</button>
+      </div>
     </div>
-    <div id="loadingModal">
-      <div class="spinner"></div>
-      <p id="loadingText" style="margin-top: 10px">Memuat...</p>
+
+    <div id="modalLoading" class="fixed inset-0 bg-black/80 z-[110] hidden flex-col items-center justify-center">
+      <div class="w-10 h-10 border-4 border-slate-200 border-t-accent rounded-full animate-spin"></div>
+      <p class="text-white text-sm mt-4 font-medium" id="loadingText">Memproses...</p>
     </div>
 
-    <script>
-      // ⚠️ GANTI DENGAN URL DEPLOY TERBARU MAS ZAKY
-      const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIMP9_q2245Gta50V8210719xHR5ezbScmsMsZSutVp7kbwPxe23Kqp2t1bfl_az0H/exec";
+    <div id="modalAddAsset" class="fixed inset-0 bg-black/50 z-[90] hidden items-end sm:items-center justify-center p-4">
+      <div class="bg-white w-full max-w-sm rounded-2xl p-4 shadow-2xl animate-slide-up">
+        <h3 class="font-bold text-lg mb-4 text-primary">Tambah Master Aset</h3>
+        <div class="space-y-3">
+          <input type="text" id="new_id" placeholder="ID Aset (Unik)" class="w-full border p-3 rounded-xl text-sm" />
+          <input type="text" id="new_name" placeholder="Nama Aset" class="w-full border p-3 rounded-xl text-sm" />
+          <input type="text" id="new_loc" placeholder="Lokasi" class="w-full border p-3 rounded-xl text-sm" />
+          <input type="date" id="new_date" class="w-full border p-3 rounded-xl text-sm text-slate-500" />
+          <button onclick="submitNewAsset()" class="w-full bg-primary text-white py-3 rounded-xl font-bold mt-2">Simpan Aset</button>
+          <button onclick="closeModal('modalAddAsset')" class="w-full text-slate-400 py-2 text-sm">Batal</button>
+        </div>
+      </div>
+    </div>
 
-      // --- 1. LOGIKA UTAMA (SCAN & SEARCH) ---
-      let recentAssets = JSON.parse(localStorage.getItem("bms_recent")) || [];
-      let currentAsset = null;
-      let html5QrcodeScanner = null;
+    <div id="modalTool" class="fixed inset-0 bg-black/50 z-[90] hidden items-end sm:items-center justify-center p-4">
+      <div class="bg-white w-full max-w-sm rounded-2xl p-4 shadow-2xl animate-slide-up max-h-[90vh] overflow-y-auto">
+        <h3 class="font-bold text-lg mb-4 text-primary" id="toolModalTitle">Tambah Tool</h3>
+        <input type="hidden" id="tool_id" />
+        <div class="space-y-3">
+          <input type="text" id="tool_name" placeholder="Nama Tool (Cth: Auto Clean)" class="w-full border p-3 rounded-xl text-sm" />
+          <input type="text" id="tool_desc" placeholder="Deskripsi Singkat" class="w-full border p-3 rounded-xl text-sm" />
+          <input type="text" id="tool_icon" placeholder="Nama Icon Material (opsional)" class="w-full border p-3 rounded-xl text-sm" />
+          <textarea id="tool_cmd" rows="2" placeholder="Command (Powershell/CMD)" class="w-full border p-3 rounded-xl text-sm font-mono bg-slate-50"></textarea>
+          <input type="text" id="tool_qr" placeholder="Link Gambar QR (URL)" class="w-full border p-3 rounded-xl text-sm" />
 
-      function renderList(data, isSearchResult = false) {
-        const container = document.getElementById("assetListContainer");
-        const label = document.getElementById("listLabel");
+          <div class="flex gap-2 mt-2">
+            <button onclick="saveTool()" class="flex-1 bg-primary text-white py-3 rounded-xl font-bold">Simpan</button>
+            <button onclick="closeModal('modalTool')" class="flex-1 bg-slate-100 text-slate-500 py-3 rounded-xl font-bold">Batal</button>
+          </div>
+          <button onclick="deleteTool()" id="btnDeleteTool" class="w-full text-red-500 py-2 text-xs font-bold hidden">Hapus Tool Ini</button>
+        </div>
+      </div>
+    </div>
 
-        if (!container || !label) return;
-
-        container.innerHTML = "";
-        label.innerText = isSearchResult ? `🔍 Hasil Pencarian (${data.length})` : "🕐 Terakhir Dilihat (Recent)";
-
-        if (data.length === 0) {
-          container.innerHTML = `<div style="text-align:center; padding:2rem; color:#999">${isSearchResult ? "Tidak ada aset ditemukan" : "Belum ada riwayat"}</div>`;
-          return;
-        }
-
-        data.forEach((item) => {
-          const card = document.createElement("div");
-          card.className = "asset-card";
-          card.onclick = () => pilihAset(item);
-          card.innerHTML = `
-            <div class="asset-name">${item.name}</div>
-            <div class="asset-loc">📍 ${item.location} <span style="background:#eee; padding:2px 5px; font-size:0.7rem; border-radius:4px">${item.id}</span></div>
-            <div class="asset-date"><span class="material-icons-round" style="font-size:14px">calendar_today</span> Sejak: ${item.date || "-"}</div>
-          `;
-          container.appendChild(card);
-        });
-      }
-
-      renderList(recentAssets);
-
-      function doSearch() {
-        const keyword = document.getElementById("searchInput").value;
-        if (!keyword) {
-          renderList(recentAssets);
-          return;
-        }
-
-        showLoading("Mencari Aset...");
-        fetch(`${APPS_SCRIPT_URL}?action=search&q=${encodeURIComponent(keyword)}`)
-          .then((res) => res.json())
-          .then((data) => renderList(data, true))
-          .catch((err) => alert("Gagal koneksi server: " + err))
-          .finally(() => hideLoading());
-      }
-
-      function startScanner() {
-        document.getElementById("scannerModal").style.display = "flex";
-        html5QrcodeScanner = new Html5Qrcode("reader");
-        html5QrcodeScanner.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: 250 },
-          (decodedText) => {
-            stopScanner();
-            fetchAssetById(decodedText);
-          },
-          (err) => {}
-        );
-      }
-
-      function stopScanner() {
-        if (html5QrcodeScanner) {
-          html5QrcodeScanner.stop().then(() => {
-            html5QrcodeScanner.clear();
-            document.getElementById("scannerModal").style.display = "none";
-          });
-        }
-      }
-
-      function fetchAssetById(id) {
-        showLoading("Mengambil Data...");
-        fetch(`${APPS_SCRIPT_URL}?action=scan&q=${encodeURIComponent(id)}`)
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.length > 0) {
-              const item = data[0];
-              recentAssets = recentAssets.filter((a) => a.id !== item.id);
-              recentAssets.unshift(item);
-              if (recentAssets.length > 10) recentAssets.pop();
-              localStorage.setItem("bms_recent", JSON.stringify(recentAssets));
-              pilihAset(item);
-            } else {
-              alert("Aset tidak ditemukan di database!");
-            }
-          })
-          .catch((err) => alert("Error koneksi: " + err))
-          .finally(() => hideLoading());
-      }
-
-      // --- 2. LOGIKA FORM & FOTO (INI YANG BARU) ---
-
-      function pilihAset(item) {
-        currentAsset = item;
-        document.getElementById("selectedAssetName").innerText = item.name;
-        document.getElementById("selectedAssetLoc").innerText = item.location;
-        document.getElementById("selectedAssetId").innerText = item.id;
-
-        document.getElementById("patrolListView").style.display = "none";
-        document.getElementById("formLaporanView").style.display = "block";
-
-        document.getElementById("catatan").value = "";
-        resetFileInput("fotoKondisi");
-        resetFileInput("fotoQR");
-      }
-
-      function batalLapor() {
-        document.getElementById("formLaporanView").style.display = "none";
-        document.getElementById("patrolListView").style.display = "block";
-        renderList(recentAssets);
-      }
-
-      function setStatus(el) {
-        const radio = el.parentElement.querySelector("input");
-        radio.checked = true;
-        document.querySelectorAll('input[name="status"]').forEach((r) => {
-          r.parentElement.querySelector("div").style.background = "white";
-          r.parentElement.querySelector("div").style.borderColor = "#e2e8f0";
-        });
-        el.style.background = "#eff6ff";
-        el.style.borderColor = "#2563eb";
-      }
-
-      // FUNGSI UTAMA PREVIEW FOTO
-      function previewImage(input, type) {
-        if (input.files && input.files[0]) {
-          if (input.files[0].size > 5 * 1024 * 1024) {
-            alert("Ukuran foto terlalu besar! Maksimal 5MB.");
-            input.value = "";
-            return;
-          }
-          const reader = new FileReader();
-          reader.onload = function (e) {
-            if (input.id === "fotoKondisi") {
-              document.getElementById("prev1").src = e.target.result;
-              document.getElementById("prev1").style.display = "block";
-              document.getElementById("txt1").style.display = "none";
-            } else if (input.id === "fotoQR") {
-              document.getElementById("prev2").src = e.target.result;
-              document.getElementById("prev2").style.display = "block";
-              document.getElementById("txt2").style.display = "none";
-            }
-          };
-          reader.readAsDataURL(input.files[0]);
-        }
-      }
-
-      function resetFileInput(id) {
-        document.getElementById(id).value = "";
-        if (id === "fotoKondisi") {
-          document.getElementById("prev1").style.display = "none";
-          document.getElementById("prev1").src = "";
-          document.getElementById("txt1").style.display = "block";
-        } else {
-          document.getElementById("prev2").style.display = "none";
-          document.getElementById("prev2").src = "";
-          document.getElementById("txt2").style.display = "block";
-        }
-      }
-
-      // --- 3. SUBMIT DATA DENGAN UPLOAD FOTO ---
-      async function submitData() {
-        const statusEl = document.querySelector('input[name="status"]:checked');
-        if (!statusEl) {
-          alert("Pilih status kondisi dulu!");
-          return;
-        }
-
-        const status = statusEl.value;
-        const catatan = document.getElementById("catatan").value;
-        const file1 = document.getElementById("fotoKondisi").files[0];
-        const file2 = document.getElementById("fotoQR").files[0];
-
-        if (status !== "Normal" && !catatan) {
-          alert("Jika kondisi rusak/cek, wajib isi catatan!");
-          return;
-        }
-
-        showLoading("Mengompres Foto & Mengirim...");
-
-        try {
-          // KONVERSI GAMBAR (PENTING!)
-          const base64Img1 = file1 ? await toBase64(file1) : "";
-          const base64Img2 = file2 ? await toBase64(file2) : "";
-
-          const payload = {
-            namaAset: currentAsset.name,
-            lokasi: currentAsset.location,
-            status: status,
-            catatan: catatan,
-            petugas: "Adam Zaky",
-            waktu: new Date().toLocaleString(),
-            fotoKondisi: base64Img1, // Data Gambar 1
-            fotoQR: base64Img2, // Data Gambar 2
-          };
-
-          await fetch(APPS_SCRIPT_URL, {
-            method: "POST",
-            body: JSON.stringify(payload),
-          });
-
-          alert("✅ Laporan Berhasil Disimpan!");
-          batalLapor();
-        } catch (e) {
-          console.error(e);
-          alert("Gagal kirim laporan: " + e.message);
-        } finally {
-          hideLoading();
-        }
-      }
-
-      // HELPER: Convert Image to Base64 (WAJIB ADA)
-      function toBase64(file) {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = () => {
-              const canvas = document.createElement("canvas");
-              const MAX_WIDTH = 800;
-              const scaleSize = MAX_WIDTH / img.width;
-              canvas.width = MAX_WIDTH;
-              canvas.height = img.height * scaleSize;
-              const ctx = canvas.getContext("2d");
-              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-              resolve(canvas.toDataURL("image/jpeg", 0.6));
-            };
-          };
-          reader.onerror = (error) => reject(error);
-        });
-      }
-
-      // --- 4. UTILS ---
-      function showLoading(txt) {
-        document.getElementById("loadingModal").style.display = "flex";
-        document.getElementById("loadingText").innerText = txt;
-      }
-      function hideLoading() {
-        document.getElementById("loadingModal").style.display = "none";
-      }
-
-      function switchTab(tab, el) {
-        document.querySelectorAll(".tab-section").forEach((t) => t.classList.remove("active"));
-        document.querySelectorAll(".nav-item").forEach((n) => n.classList.remove("active"));
-        document.getElementById("tab-" + tab).classList.add("active");
-        el.classList.add("active");
-        const titles = { patrol: "🛡️ BMS Asset Patrol", tools: "🛠️ IT Tools", log: "📒 Log IT" };
-        document.getElementById("headerTitle").innerText = titles[tab];
-      }
-
-      function copyText(id) {
-        const text = document.getElementById(id).innerText;
-        navigator.clipboard
-          .writeText(text)
-          .then(() => alert("Copied!"))
-          .catch((err) => alert("Gagal copy"));
-      }
-    </script>
+    <script src="script.js"></script>
   </body>
 </html>
