@@ -994,3 +994,234 @@ async function submitJurnal() {
     closeModal("modalLoading");
   }
 }
+
+// ================= QR CODE GENERATOR & LABEL MAKER (CANGGIH) =================
+
+// 1. Init: Set tanggal hari ini saat modal dibuka pertama kali
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.getElementById("gen_label_tgl")) {
+    document.getElementById("gen_label_tgl").valueAsDate = new Date();
+  }
+});
+
+// 2. Fungsi Toggle Tampilan Input
+function toggleLabelInputs() {
+  const isLabelMode = document.getElementById("toggleLabelMode").checked;
+  const extraInputs = document.getElementById("extraLabelInputs");
+  const labelText = document.getElementById("labelModeText");
+
+  if (isLabelMode) {
+    extraInputs.classList.remove("hidden");
+    labelText.innerText = "Label Lengkap (Stiker)";
+    labelText.classList.replace("text-slate-400", "text-primary");
+  } else {
+    extraInputs.classList.add("hidden");
+    labelText.innerText = "Hanya QR Code";
+    labelText.classList.replace("text-primary", "text-slate-400");
+  }
+}
+
+// 3. Fungsi Utama Generate
+async function generateQR() {
+  const id = document.getElementById("gen_qr_id").value.toUpperCase();
+  const isLabelMode = document.getElementById("toggleLabelMode").checked;
+  const canvasContainer = document.getElementById("qrcode_canvas");
+  const resultArea = document.getElementById("qrResultArea");
+  const tempContainer = document.getElementById("temp_qr_holder"); // Wadah sementara
+
+  if (!id) {
+    alert("Nomor Aset (ID) wajib diisi!");
+    return;
+  }
+
+  // Reset Area
+  canvasContainer.innerHTML = '<span class="material-icons-round animate-spin text-slate-300">sync</span>';
+  resultArea.classList.remove("hidden");
+  tempContainer.innerHTML = ""; // Bersihkan wadah sementara
+
+  // --- KONFIGURASI QR (Sesuai request Mas Adam) ---
+  // Kita buat QR-nya agak besar biar tajam saat diprint
+  const qrSize = isLabelMode ? 250 : 300;
+  const options = {
+    text: id,
+    width: qrSize,
+    height: qrSize,
+    colorDark: "#000000",
+    colorLight: "#ffffff", // Hitam Putih Profesional
+    correctLevel: QRCode.CorrectLevel.H,
+    // Logo Settings (Pastikan file ada di folder)
+    logo: "Berlian-Manyar-Sejahtera-New-Thumbnail.jpg",
+    logoWidth: qrSize * 0.25,
+    logoHeight: qrSize * 0.25, // Proporsional 25%
+    logoBackgroundColor: "#ffffff",
+    logoBackgroundTransparent: false,
+    quietZone: 10,
+    quietZoneColor: "#ffffff",
+  };
+
+  try {
+    if (!isLabelMode) {
+      // === MODE 1: HANYA QR BIASA ===
+      canvasContainer.innerHTML = "";
+      new QRCode(canvasContainer, options);
+    } else {
+      // === MODE 2: LABEL LENGKAP (CANVAS DRAWING) ===
+      // Ambil data inputan label
+      const nama = document.getElementById("gen_label_nama").value || "-";
+      const tglInput = document.getElementById("gen_label_tgl").value;
+      let tglStr = "-";
+      if (tglInput) {
+        const d = new Date(tglInput);
+        tglStr = `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}/${d.getFullYear()}`;
+      }
+      const divisi = document.getElementById("gen_label_divisi").value || "-";
+
+      // a. Generate QR mentahan di wadah tersembunyi dulu
+      new QRCode(tempContainer, options);
+
+      // b. Tunggu sebentar agar library selesai merender QR dan Logo
+      await new Promise((r) => setTimeout(r, 500));
+      const qrCanvasMentah = tempContainer.querySelector("canvas");
+      if (!qrCanvasMentah) throw new Error("Gagal generate QR base");
+
+      // c. SIAPKAN KANVAS LABEL UTAMA (Ukuran besar biar HD)
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      // Ukuran referensi dari gambar stiker (lebar persegi panjang)
+      const labelWidth = 800;
+      const labelHeight = 320;
+      canvas.width = labelWidth;
+      canvas.height = labelHeight;
+
+      // --- MULAI MENGGAMBAR DI KANVAS ---
+
+      // 1. Background Putih & Border Hitam Luar
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, labelWidth, labelHeight);
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(2, 2, labelWidth - 4, labelHeight - 4);
+
+      // 2. Garis Pemisah Vertikal (Antara Teks dan QR)
+      const splitX = 520; // Posisi garis vertikal
+      ctx.beginPath();
+      ctx.moveTo(splitX, 0);
+      ctx.lineTo(splitX, labelHeight);
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // 3. Header Perusahaan (PT BMS)
+      ctx.fillStyle = "#000000";
+      ctx.font = "bold 24px Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("PT Berlian Manyar Sejahtera", splitX / 2, 40); // Center di area kiri
+
+      // 4. Garis Horizontal di bawah Header
+      ctx.beginPath();
+      ctx.moveTo(0, 60);
+      ctx.lineTo(splitX, 60);
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // 5. Menggambar Baris Data (Looping biar rapi)
+      const labels = ["Nama aset", "Nomor aset", "Tanggal", "Divisi"];
+      const values = [nama, id, tglStr, divisi];
+      const startY = 100; // Posisi Y mulai data pertama
+      const rowHeight = 55; // Tinggi per baris
+      const colSplitX = 200; // Posisi garis pemisah label:value
+
+      ctx.font = "bold 20px Arial, sans-serif";
+      ctx.textAlign = "left";
+
+      labels.forEach((lbl, i) => {
+        const currentY = startY + i * rowHeight;
+
+        // Label Kiri (Hitam Background di foto referensi, tapi kita buat putih bersih aja biar rapi)
+        // Kalau mau persis foto referensi (blok hitam):
+        // ctx.fillStyle = "#000000"; ctx.fillRect(2, currentY - 30, colSplitX-2, rowHeight); ctx.fillStyle = "#ffffff";
+        ctx.fillStyle = "#000000"; // Warna teks hitam
+        ctx.fillText(lbl, 20, currentY);
+
+        // Garis Vertikal Kecil Pemisah Label:Value
+        ctx.beginPath();
+        ctx.moveTo(colSplitX, currentY - 35);
+        ctx.lineTo(colSplitX, currentY + 20);
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Value Kanan
+        ctx.font = lbl === "Nomor aset" ? "bold 22px monospace" : "bold 20px Arial, sans-serif"; // ID pakai font beda
+        ctx.fillText(values[i], colSplitX + 20, currentY);
+
+        // Garis Horizontal Pemisah Antar Baris (Kecuali yang terakhir)
+        if (i < labels.length - 1) {
+          ctx.beginPath();
+          ctx.moveTo(0, currentY + 20);
+          ctx.lineTo(splitX, currentY + 20);
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      });
+
+      // 6. TEMPELKAN QR CODE KE AREA KANAN
+      // Hitung posisi tengah di area kanan
+      const qrAreaWidth = labelWidth - splitX;
+      const qrPosX = splitX + (qrAreaWidth - qrSize) / 2;
+      const qrPosY = (labelHeight - qrSize) / 2;
+
+      // Gambar kanvas QR mentah ke kanvas utama
+      ctx.drawImage(qrCanvasMentah, qrPosX, qrPosY, qrSize, qrSize);
+
+      // --- SELESAI MENGGAMBAR ---
+
+      // Tampilkan hasilnya
+      canvasContainer.innerHTML = "";
+      // Ubah style kanvas biar responsif di layar HP (tapi aslinya besar HD)
+      canvas.style.width = "100%";
+      canvas.style.height = "auto";
+      canvas.style.maxWidth = "400px"; // Batasi tampilan di HP
+      canvas.id = "finalLabelCanvas"; // Kasih ID buat didownload nanti
+      canvasContainer.appendChild(canvas);
+    }
+  } catch (e) {
+    canvasContainer.innerHTML = '<p class="text-red-500 text-xs">Gagal generate label.</p>';
+    alert("Error: " + e.message + ". Pastikan file logo tersedia.");
+  }
+}
+
+// 4. Fungsi Download Gambar
+function downloadQRImage() {
+  const isLabelMode = document.getElementById("toggleLabelMode").checked;
+  let canvas, fileName;
+
+  if (isLabelMode) {
+    // Download Label Lengkap
+    canvas = document.getElementById("finalLabelCanvas");
+    const id = document.getElementById("gen_qr_id").value || "ASET";
+    fileName = `Label_BMS_${id.toUpperCase()}.png`;
+  } else {
+    // Download QR Biasa
+    // Cari elemen canvas yg digenerate library di dalam qrcode_canvas
+    canvas = document.getElementById("qrcode_canvas").querySelector("canvas");
+    const id = document.getElementById("gen_qr_id").value || "QR";
+    fileName = `QR_BMS_${id.toUpperCase()}.png`;
+  }
+
+  if (!canvas) {
+    alert("Belum ada gambar yang digenerate!");
+    return;
+  }
+
+  // Proses Download Native Browser
+  try {
+    const link = document.createElement("a");
+    // Convert canvas jadi file gambar PNG kualitas tinggi
+    link.href = canvas.toDataURL("image/png", 1.0);
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (e) {
+    alert("Gagal mendownload gambar di browser ini. Coba tekan dan tahan gambarnya untuk menyimpan manual.");
+  }
+}
