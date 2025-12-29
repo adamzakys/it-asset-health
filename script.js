@@ -14,6 +14,8 @@ let currentAsset = null;
 let html5QrcodeScanner = null;
 let targetInputId = null;
 let tempShareData = null;
+let globalFeedData = []; // Menyimpan data mentah dari server
+let currentFilter = "ALL";
 
 // ================= INIT =================
 document.addEventListener("DOMContentLoaded", () => {
@@ -21,6 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderLog();
   renderTools();
   renderJurnal();
+  loadGlobalFeed();
   // 1. Setup Tanggal Default
   if (document.getElementById("new_date")) {
     document.getElementById("new_date").valueAsDate = new Date();
@@ -157,6 +160,163 @@ function renderLog() {
   });
 }
 
+// ================= GLOBAL FEED LOGIC (BERANDA) =================
+
+async function loadGlobalFeed() {
+  const container = document.getElementById("unifiedActivityLog");
+  container.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-8 opacity-50">
+            <span class="material-icons-round animate-spin text-2xl text-primary mb-2">sync</span>
+            <span class="text-[10px] text-slate-400">Sinkronisasi aktivitas...</span>
+        </div>`;
+
+  try {
+    const res = await fetch(`${API_URL}?action=get_feed`);
+    globalFeedData = await res.json();
+
+    // Setelah data dapat, langsung render dengan filter default
+    filterFeed();
+  } catch (e) {
+    container.innerHTML = `<div class="text-center py-6 text-xs text-red-400">Gagal memuat aktivitas.<br><button onclick="loadGlobalFeed()" class="mt-2 underline font-bold">Refresh</button></div>`;
+  }
+}
+
+function setFeedFilter(type, btn) {
+  currentFilter = type;
+
+  // Update UI Button Active
+  document.querySelectorAll(".filter-chip").forEach((el) => {
+    el.className = "filter-chip px-3 py-1.5 rounded-full text-[10px] font-bold border border-slate-200 bg-white text-slate-500 whitespace-nowrap transition-colors";
+  });
+  btn.className = "filter-chip active px-3 py-1.5 rounded-full text-[10px] font-bold border border-slate-200 bg-primary text-white whitespace-nowrap transition-colors shadow-sm";
+
+  filterFeed();
+}
+
+function filterFeed() {
+  const container = document.getElementById("unifiedActivityLog");
+  const searchVal = document.getElementById("feedSearch").value.toLowerCase();
+
+  // Hitung waktu Hari Ini & Kemarin (Mulai jam 00:00 kemarin)
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  yesterday.setHours(0, 0, 0, 0);
+  const minTime = yesterday.getTime();
+
+  // LOGIKA FILTER UTAMA
+  const filtered = globalFeedData.filter((item) => {
+    // 1. Filter Waktu (Hari Ini & Kemarin Saja)
+    // item.timestamp didapat dari backend
+    if (item.timestamp < minTime) return false;
+
+    // 2. Filter Kategori Tombol
+    if (currentFilter !== "ALL" && item.type !== currentFilter) return false;
+
+    // 3. Filter Search Text (Cari di Judul, Petugas, atau Desc)
+    const textMatch = item.title.toLowerCase().includes(searchVal) || item.petugas.toLowerCase().includes(searchVal) || item.desc.toLowerCase().includes(searchVal);
+    if (!textMatch) return false;
+
+    return true;
+  });
+
+  renderFeedList(filtered);
+}
+
+function renderFeedList(data) {
+  const container = document.getElementById("unifiedActivityLog");
+  container.innerHTML = "";
+
+  if (data.length === 0) {
+    container.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs border border-dashed border-slate-200 rounded-xl">Tidak ada aktivitas baru (Hari ini/Kemarin).</div>`;
+    return;
+  }
+
+  data.forEach((item) => {
+    let icon = "history";
+    let color = "bg-slate-100 text-slate-500";
+    // Icon Mapping
+    if (item.type === "LAPOR") {
+      icon = "build";
+      color = "bg-orange-50 text-accent";
+    }
+    if (item.type === "JURNAL") {
+      icon = "assignment";
+      color = "bg-blue-50 text-primary";
+    }
+    if (item.type === "INPUT") {
+      icon = "add_circle";
+      color = "bg-emerald-50 text-emerald-600";
+    }
+
+    // Format Waktu Relative (misal: "Hari ini", "Kemarin")
+    const itemDate = new Date(item.timestamp);
+    const today = new Date();
+    const isToday = itemDate.getDate() === today.getDate() && itemDate.getMonth() === today.getMonth();
+    const timeLabel = isToday ? "Hari ini" : "Kemarin";
+
+    const div = document.createElement("div");
+    div.className = "bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex items-center gap-3 animate-fade-in";
+    div.innerHTML = `
+            <div class="${color} p-2.5 rounded-full h-10 w-10 flex items-center justify-center shadow-sm shrink-0">
+                <span class="material-icons-round text-lg">${icon}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="flex justify-between items-start">
+                    <h4 class="text-xs font-bold text-slate-700 truncate pr-2">${item.title}</h4>
+                    <span class="text-[9px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded whitespace-nowrap">${timeLabel}</span>
+                </div>
+                <p class="text-[10px] text-slate-500 truncate">${item.desc}</p>
+                <p class="text-[9px] text-primary font-bold mt-1 flex items-center gap-1">
+                    <span class="material-icons-round text-[10px]">person</span> ${item.petugas}
+                </p>
+            </div>
+        `;
+    container.appendChild(div);
+  });
+}
+// ================= KOMPRESI FOTO (UPDATE PENTING) =================
+function toBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.src = e.target.result;
+      img.onload = () => {
+        // Buat Canvas untuk Resize
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        // Atur Ukuran Maksimal (misal 800px)
+        const MAX_WIDTH = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_WIDTH) {
+            width *= MAX_WIDTH / height;
+            height = MAX_WIDTH;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Kompresi JPEG Quality 0.6 (60%)
+        // Ini bikin file dari 5MB jadi sekitar 50KB-100KB saja!
+        resolve(canvas.toDataURL("image/jpeg", 0.6));
+      };
+    };
+    reader.onerror = reject;
+  });
+}
 // ================= CORE: SEARCH & SCAN =================
 async function fetchData(action, query) {
   // Mode Scan untuk Input ID

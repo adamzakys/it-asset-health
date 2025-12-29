@@ -39,13 +39,7 @@
     <main class="max-w-md mx-auto p-4 min-h-[80vh]">
       <section id="tab-home" class="tab-section active space-y-6">
         <div class="bg-primary text-white p-5 rounded-2xl shadow-lg shadow-primary/20 relative overflow-hidden group transition-all hover:shadow-xl">
-          <div class="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
-          <div class="absolute bottom-0 left-0 w-24 h-24 bg-accent/20 rounded-full -ml-10 -mb-10 blur-xl"></div>
-
           <div class="relative z-10 flex items-center gap-4">
-            <div class="bg-white/20 p-3 rounded-full border border-white/30 backdrop-blur-sm">
-              <span class="material-icons-round text-3xl text-white">engineering</span>
-            </div>
             <div class="flex-1">
               <p class="text-[10px] text-orange-100 font-bold uppercase tracking-wider mb-1">Current Officer</p>
               <h2 class="text-xl font-bold flex items-center gap-2 cursor-pointer hover:text-orange-200 transition-colors" onclick="ubahNamaUser()">
@@ -57,11 +51,29 @@
         </div>
 
         <div>
-          <div class="flex justify-between items-center mb-3 px-1">
-            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider border-l-4 border-accent pl-2">Aktivitas Terkini</h3>
-            <button onclick="clearLog()" class="text-[10px] text-red-500 font-bold hover:bg-red-50 px-2 py-1 rounded transition-colors">CLEAR</button>
+          <div class="mb-3 px-1">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider border-l-4 border-accent pl-2 mb-3">Aktivitas Tim (Live)</h3>
+
+            <div class="relative mb-3">
+              <span class="material-icons-round absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
+              <input
+                type="text"
+                id="feedSearch"
+                onkeyup="filterFeed()"
+                placeholder="Cari nama petugas / kegiatan..."
+                class="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs focus:outline-none focus:border-accent shadow-sm"
+              />
+            </div>
+
+            <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" id="feedFilters">
+              <button onclick="setFeedFilter('ALL', this)" class="filter-chip active px-3 py-1.5 rounded-full text-[10px] font-bold border border-slate-200 bg-primary text-white whitespace-nowrap transition-colors">Semua</button>
+              <button onclick="setFeedFilter('LAPOR', this)" class="filter-chip px-3 py-1.5 rounded-full text-[10px] font-bold border border-slate-200 bg-white text-slate-500 whitespace-nowrap transition-colors">Maintenance</button>
+              <button onclick="setFeedFilter('JURNAL', this)" class="filter-chip px-3 py-1.5 rounded-full text-[10px] font-bold border border-slate-200 bg-white text-slate-500 whitespace-nowrap transition-colors">Dokumentasi</button>
+              <button onclick="setFeedFilter('INPUT', this)" class="filter-chip px-3 py-1.5 rounded-full text-[10px] font-bold border border-slate-200 bg-white text-slate-500 whitespace-nowrap transition-colors">Master Data</button>
+            </div>
           </div>
-          <div id="unifiedActivityLog" class="space-y-3 pb-4"></div>
+
+          <div id="unifiedActivityLog" class="space-y-3 pb-4 min-h-[200px]"></div>
         </div>
       </section>
 
