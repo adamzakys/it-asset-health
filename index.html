@@ -139,7 +139,18 @@
                 <input type="file" id="file_img2" accept="image/*" capture="environment" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="previewImg(this, 'prev_img2')" />
               </div>
             </div>
+            <div class="pt-2">
+              <div class="flex justify-between items-center mb-2" onclick="toggleHistory()" style="cursor: pointer">
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest"> Riwayat Perbaikan (Server) </label>
+                <span class="material-icons-round text-slate-400 text-sm" id="histIcon">expand_more</span>
+              </div>
 
+              <div id="histLoading" class="hidden text-center py-2">
+                <span class="material-icons-round animate-spin text-slate-300 text-sm">sync</span>
+              </div>
+
+              <div id="assetHistoryList" class="space-y-2 hidden max-h-40 overflow-y-auto bg-slate-50 p-2 rounded-xl border border-slate-100"></div>
+            </div>
             <button onclick="submitLaporan()" class="w-full bg-accent hover:bg-orange-600 text-white py-4 rounded-xl font-bold text-sm shadow-xl shadow-accent/20 active:scale-[0.98] transition-all flex justify-center items-center gap-2">
               <span>KIRIM LAPORAN</span>
               <span class="material-icons-round text-sm">send</span>
@@ -165,7 +176,22 @@
         <h3 class="font-bold text-slate-600">E-Logbook</h3>
         <p class="text-slate-400 text-xs mt-1 max-w-[200px]">Modul pencatatan harian digital sedang disiapkan.</p>
       </section>
-
+      <section id="tab-jurnal" class="tab-section hidden relative min-h-screen pb-20">
+        <div class="flex justify-between items-center mb-4 px-1">
+          <div>
+            <h3 class="font-bold text-slate-600 text-sm uppercase tracking-wider border-l-4 border-accent pl-2">Daily Activity</h3>
+            <p class="text-[10px] text-slate-400 pl-3">Dokumentasi pekerjaan tim IT</p>
+          </div>
+          <button onclick="openModal('modalJurnal')" class="bg-primary text-white px-4 py-2 rounded-xl shadow-lg shadow-primary/30 active:scale-95 transition-transform flex items-center gap-2">
+            <span class="material-icons-round text-sm">add_a_photo</span>
+            <span class="text-xs font-bold">Post</span>
+          </button>
+        </div>
+        <div
+          id="jurnalContainer"
+          class="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent"
+        ></div>
+      </section>
       <button
         onclick="openModal('modalAbout')"
         class="fixed bottom-24 right-4 z-30 bg-white text-primary w-9 h-9 rounded-full shadow-md border border-slate-200 flex items-center justify-center active:scale-90 transition-transform opacity-80 hover:opacity-100"
@@ -190,10 +216,35 @@
         </div>
 
         <button class="nav-btn" onclick="switchTab('tools', this)"><span class="material-icons-round text-2xl mb-0.5">construction</span><span class="text-[9px] font-bold">Tools</span></button>
-        <button class="nav-btn" onclick="switchTab('log', this)"><span class="material-icons-round text-2xl mb-0.5">history_edu</span><span class="text-[9px] font-bold">Log</span></button>
+        <button class="nav-btn" onclick="switchTab('jurnal', this)"><span class="material-icons-round text-2xl mb-0.5">assignment</span><span class="text-[9px] font-bold">Jurnal</span></button>
       </div>
     </nav>
+    <div id="modalJurnal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden items-end sm:items-center justify-center p-4">
+      <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-scale-up max-h-[90vh] overflow-y-auto">
+        <h3 class="font-bold text-lg mb-1 text-primary">Dokumentasi Pekerjaan</h3>
+        <p class="text-xs text-slate-400 mb-5">Catat kegiatan non-rutin/insidental.</p>
 
+        <div class="space-y-4">
+          <input type="text" id="jurnal_judul" placeholder="Judul Kegiatan (Cth: Relokasi CCTV)" class="w-full border-2 border-slate-100 bg-slate-50 p-3 rounded-xl text-sm font-bold focus:border-accent outline-none" />
+          <input type="text" id="jurnal_lokasi" placeholder="Lokasi Pengerjaan" class="w-full border-2 border-slate-100 bg-slate-50 p-3 rounded-xl text-sm focus:border-accent outline-none" />
+          <textarea id="jurnal_desc" rows="3" placeholder="Deskripsi teknis pekerjaan..." class="w-full border-2 border-slate-100 bg-slate-50 p-3 rounded-xl text-sm focus:border-accent outline-none"></textarea>
+
+          <div class="relative h-40 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 hover:border-accent flex flex-col items-center justify-center overflow-hidden transition-colors group">
+            <div class="group-hover:scale-110 transition-transform duration-300 flex flex-col items-center">
+              <span class="material-icons-round text-slate-300 text-3xl group-hover:text-accent">add_a_photo</span>
+              <span class="text-[10px] text-slate-400 mt-2 font-bold group-hover:text-accent">FOTO KEGIATAN</span>
+            </div>
+            <img id="prev_jurnal" class="absolute inset-0 w-full h-full object-cover hidden" />
+            <input type="file" id="file_jurnal" accept="image/*" capture="environment" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="previewImg(this, 'prev_jurnal')" />
+          </div>
+
+          <div class="flex gap-2 pt-2">
+            <button onclick="closeModal('modalJurnal')" class="flex-1 bg-slate-100 text-slate-500 py-3 rounded-xl font-bold">Batal</button>
+            <button onclick="submitJurnal()" class="flex-1 bg-primary text-white py-3 rounded-xl font-bold shadow-lg shadow-primary/20 active:scale-95 transition-transform">Posting</button>
+          </div>
+        </div>
+      </div>
+    </div>
     <div id="modalAbout" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] hidden items-center justify-center p-6 animate-fade-in">
       <div class="bg-white w-full max-w-xs rounded-3xl p-6 shadow-2xl relative text-center overflow-hidden">
         <div class="absolute top-0 left-0 w-full h-2 bg-primary"></div>
