@@ -168,22 +168,15 @@
               <label class="block text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest">Catatan Officer</label>
               <textarea id="catatanInput" rows="2" class="w-full bg-slate-50 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-accent transition-all" placeholder="Detail kendala..."></textarea>
             </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div class="relative h-28 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 hover:border-accent flex flex-col items-center justify-center overflow-hidden transition-colors group">
+            <div class="mt-2">
+              <label class="block text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest">Foto Bukti / Kondisi</label>
+              <div class="relative h-48 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 hover:border-accent flex flex-col items-center justify-center overflow-hidden transition-colors group">
                 <div class="group-hover:scale-110 transition-transform duration-300 flex flex-col items-center">
-                  <span class="material-icons-round text-slate-300 text-2xl group-hover:text-accent">camera_alt</span>
-                  <span class="text-[10px] text-slate-400 mt-1 font-bold group-hover:text-accent">FISIK</span>
+                  <span class="material-icons-round text-slate-300 text-3xl group-hover:text-accent">add_a_photo</span>
+                  <span class="text-[10px] text-slate-400 mt-2 font-bold group-hover:text-accent">AMBIL FOTO</span>
                 </div>
                 <img id="prev_img1" class="absolute inset-0 w-full h-full object-cover hidden" />
                 <input type="file" id="file_img1" accept="image/*" capture="environment" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="previewImg(this, 'prev_img1')" />
-              </div>
-              <div class="relative h-28 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 hover:border-accent flex flex-col items-center justify-center overflow-hidden transition-colors group">
-                <div class="group-hover:scale-110 transition-transform duration-300 flex flex-col items-center">
-                  <span class="material-icons-round text-slate-300 text-2xl group-hover:text-accent">qr_code_2</span>
-                  <span class="text-[10px] text-slate-400 mt-1 font-bold group-hover:text-accent">LABEL</span>
-                </div>
-                <img id="prev_img2" class="absolute inset-0 w-full h-full object-cover hidden" />
-                <input type="file" id="file_img2" accept="image/*" capture="environment" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="previewImg(this, 'prev_img2')" />
               </div>
             </div>
             <div class="pt-2">
@@ -282,6 +275,36 @@
       </div>
     </div>
 
+    <div id="modalAssetDetail" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden items-end sm:items-center justify-center p-4">
+      <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-scale-up">
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <span id="detailStatusBadge" class="px-2 py-1 rounded text-[10px] font-bold uppercase mb-1 inline-block">STATUS</span>
+            <h3 class="font-bold text-lg text-slate-800 leading-tight" id="detailName">Nama Aset</h3>
+            <p class="text-xs text-slate-400" id="detailDate">Tanggal Lapor</p>
+          </div>
+          <button onclick="closeModal('modalAssetDetail')" class="bg-slate-100 p-1 rounded-full"><span class="material-icons-round text-slate-500">close</span></button>
+        </div>
+
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4">
+          <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Catatan / Kendala:</p>
+          <p class="text-sm text-slate-700 italic" id="detailNote">...</p>
+        </div>
+
+        <div id="photoContainer">
+          <button
+            onclick="loadDetailImage()"
+            id="btnLoadImg"
+            class="w-full border-2 border-dashed border-primary/30 text-primary py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-primary/5 transition-colors"
+          >
+            <span class="material-icons-round">image</span> LIHAT FOTO TERAKHIR
+          </button>
+          <div id="imgWrapper" class="hidden mt-2 relative rounded-xl overflow-hidden bg-slate-100 min-h-[150px]">
+            <img id="detailImgDisplay" class="w-full object-cover" alt="Foto Bukti" />
+          </div>
+        </div>
+      </div>
+    </div>
     <div id="modalAddAsset" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden items-end sm:items-center justify-center p-4 transition-all">
       <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-scale-up relative">
         <h3 class="font-bold text-xl mb-1 text-primary">Tambah Master Aset</h3>

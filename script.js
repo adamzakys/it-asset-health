@@ -18,6 +18,7 @@ let globalFeedData = [];
 let statsDataCache = null;
 let currentDetailPhotoUrl = "";
 let currentFilter = "ALL";
+let isScanningProcess = false;
 
 // ================= INIT =================
 document.addEventListener("DOMContentLoaded", () => {
@@ -254,19 +255,20 @@ function scanForInput(inputId) {
 }
 
 function initScanner() {
-  // 1. Bersihkan elemen reader
+  // Reset flag agar bisa scan lagi
+  isScanningProcess = false;
+
   const readerElem = document.getElementById("reader");
   if (!readerElem) return;
   readerElem.innerHTML = "";
 
-  // 2. Clear instance lama jika ada
+  // Bersihkan instance lama jika ada
   if (html5QrcodeScanner) {
     try {
       html5QrcodeScanner.clear();
     } catch (e) {}
   }
 
-  // 3. Init baru
   const html5QrCode = new Html5Qrcode("reader");
   html5QrcodeScanner = html5QrCode;
 
@@ -277,33 +279,66 @@ function initScanner() {
       { facingMode: "environment" },
       config,
       (decodedText) => {
-        // -- SUKSES SCAN --
-        console.log("QR Code:", decodedText);
+        // === LOGIKA BARU YANG LEBIH AMAN ===
 
-        // Matikan kamera segera
+        // 1. Cek apakah sedang memproses? Jika ya, abaikan frame ini.
+        if (isScanningProcess) return;
+        isScanningProcess = true; // Kunci proses
+
+        console.log("QR Code Terbaca:", decodedText);
+
+        // 2. JANGAN tunggu stop() selesai. Langsung proses UI.
+        closeModal("modalScanner");
+
+        // 3. Jalankan logika pengecekan data
+        // Kita beri delay super sedikit agar UI Modal Scanner sempat hilang
+        setTimeout(() => {
+          if (targetInputId) {
+            document.getElementById(targetInputId).value = decodedText;
+            targetInputId = null;
+          } else {
+            fetchData("scan", decodedText.trim());
+          }
+        }, 300);
+
+        // 4. Matikan kamera belakangan (Fire and Forget)
+        // Kita tidak peduli dia error "Stop failed" atau tidak, yang penting data sudah jalan.
         html5QrCode
           .stop()
           .then(() => {
-            closeModal("modalScanner");
-
-            // Cek Mode: Input ID atau Cari Data
-            if (targetInputId) {
-              document.getElementById(targetInputId).value = decodedText;
-              targetInputId = null;
-            } else {
-              fetchData("scan", decodedText);
-            }
+            html5QrCode.clear();
           })
-          .catch((err) => console.error("Stop failed", err));
+          .catch((err) => {
+            console.warn("Kamera sudah mati atau gagal stop (diabaikan):", err);
+          });
       },
       (errorMessage) => {
-        // Ignore frame errors
+        // Abaikan error scanning frame kosong
       }
     )
     .catch((err) => {
-      alert("Gagal membuka kamera. Izinkan akses kamera di browser.");
+      alert("Gagal membuka kamera: " + err);
       closeModal("modalScanner");
     });
+}
+
+// FUNGSI BARU PEMBANTU (Letakkan di bawah initScanner)
+function processScanResult(decodedText) {
+  closeModal("modalScanner");
+
+  // Kasih jeda 0.5 detik agar modal scanner tutup sempurna dulu
+  // baru modal loading muncul. Ini mencegah "stuck".
+  setTimeout(() => {
+    if (targetInputId) {
+      // Mode Input Text
+      document.getElementById(targetInputId).value = decodedText;
+      targetInputId = null;
+    } else {
+      // Mode Scan Aset (Cari Data)
+      // Pastikan decodedText bersih dari spasi
+      fetchData("scan", decodedText.trim());
+    }
+  }, 500);
 }
 
 function stopScanner() {
@@ -318,38 +353,66 @@ function stopScanner() {
 }
 
 // ================= SEARCH & PATROL =================
+
+// ================= CORE: SEARCH & ACTION (FIXED) =================
 async function fetchData(action, query) {
-  document.getElementById("loadingText").innerText = "MENCARI DATA...";
+  // Tampilkan Loading
+  document.getElementById("loadingText").innerText = "MEMPROSES DATA...";
   openModal("modalLoading");
 
-  try {
-    const res = await fetch(`${API_URL}?action=${action}&q=${encodeURIComponent(query)}`);
-    const data = await res.json();
+  console.log(`Fetch Start: Action=${action}, Query=${query}`);
 
-    if (data.length === 0) {
+  try {
+    // Pastikan API_URL benar
+    if (API_URL.includes("SCRIPT_ID_KAMU")) {
+      throw new Error("API_URL belum diganti dengan URL Deploy terbaru!");
+    }
+
+    const res = await fetch(`${API_URL}?action=${action}&q=${encodeURIComponent(query)}`);
+
+    // Cek jika response bukan JSON (misal error HTML dari Google)
+    if (!res.ok) throw new Error("Gagal mengambil data dari server.");
+
+    const data = await res.json();
+    console.log("Data diterima:", data);
+
+    closeModal("modalLoading"); // Tutup loading segera setelah data dapat
+
+    // LOGIKA PENANGANAN DATA
+    if (!data || data.length === 0) {
+      // --- KASUS: DATA TIDAK DITEMUKAN ---
+      console.log("Data kosong.");
+
       if (action === "scan") {
-        if (confirm(`ID: ${query}\nData tidak ditemukan.\n\nTambah ke Master Aset?`)) {
+        // Jika hasil Scan kosong -> Tawarkan Tambah Aset
+        if (confirm(`ID Aset: ${query}\nData belum terdaftar.\n\nTambah sebagai aset baru?`)) {
           openModal("modalAddAsset");
-          document.getElementById("new_id").value = query;
+          // Auto-fill ID di form tambah
+          setTimeout(() => {
+            const inputId = document.getElementById("new_id");
+            if (inputId) inputId.value = query;
+          }, 100);
         }
       } else {
+        // Jika hasil Search Manual kosong
         alert("Data tidak ditemukan.");
         renderSearchResults([]);
       }
     } else {
-      if (action === "scan" && data.length === 1) {
-        // Jika hasil scan cuma 1 (pasti ID unik), langsung buka form
+      // --- KASUS: DATA DITEMUKAN ---
+      if (action === "scan") {
+        // Jika Scan -> Langsung Buka Form (Ambil data pertama)
         openForm(data[0]);
       } else {
-        // Jika hasil search banyak
+        // Jika Search -> Tampilkan List
         renderSearchResults(data);
-        switchTab("patrol", document.querySelectorAll(".nav-btn")[1]);
+        switchTab("patrol"); // Pindah tab biar hasil search kelihatan
       }
     }
   } catch (e) {
-    alert("Gagal koneksi: " + e.message);
-  } finally {
     closeModal("modalLoading");
+    console.error(e);
+    alert("Terjadi Kesalahan: " + e.message);
   }
 }
 
@@ -390,30 +453,41 @@ function renderSearchResults(data) {
 
 // ================= FORM LAPORAN =================
 function openForm(item) {
+  console.log("Membuka form untuk:", item);
   currentAsset = item;
+
+  // 1. WAJIB: Pindah ke Tab Patrol dulu agar form terlihat
+  // (Ini solusi masalah "tidak ada tindakan")
+  switchTab("patrol");
+
+  // 2. Reset Form UI
   resetFormUI();
 
-  document.getElementById("patrol-list-view").classList.add("hidden");
-  document.getElementById("patrol-form-view").classList.remove("hidden");
+  // 3. Tampilkan View Form, Sembunyikan List
+  const listView = document.getElementById("patrol-list-view");
+  const formView = document.getElementById("patrol-form-view");
 
-  document.getElementById("formAssetName").innerText = item.name;
-  document.getElementById("formAssetLoc").innerText = item.location;
-  document.getElementById("formAssetId").innerText = item.id;
+  if (listView) listView.classList.add("hidden");
+  if (formView) formView.classList.remove("hidden");
 
+  // 4. Isi Data Aset ke Element HTML
+  document.getElementById("formAssetName").innerText = item.name || "Nama Tidak Ada";
+  document.getElementById("formAssetLoc").innerText = item.location || "-";
+  document.getElementById("formAssetId").innerText = item.id || "-";
+
+  // 5. Load History
   loadAssetHistory(item.name);
 }
 
 function resetFormUI() {
   document.getElementById("catatanInput").value = "";
-  setStatus("Normal", document.querySelector(".status-btn")); // Reset ke Normal
+  setStatus("Normal", document.querySelector(".status-btn"));
 
-  // Reset File Inputs
+  // Reset File Input (Cuma 1 sekarang)
   document.getElementById("file_img1").value = "";
-  document.getElementById("file_img2").value = "";
   document.getElementById("prev_img1").classList.add("hidden");
-  document.getElementById("prev_img2").classList.add("hidden");
+  document.getElementById("prev_img1").src = "";
 
-  // Reset History UI
   document.getElementById("assetHistoryList").innerHTML = "";
   document.getElementById("assetHistoryList").classList.add("hidden");
 }
@@ -488,12 +562,11 @@ async function submitLaporan() {
     return;
   }
 
-  document.getElementById("loadingText").innerText = "MENYIMPAN...";
+  document.getElementById("loadingText").innerText = "MENGIRIM...";
   openModal("modalLoading");
 
   try {
     const img1 = document.getElementById("file_img1").files[0];
-    const img2 = document.getElementById("file_img2").files[0];
 
     const payload = {
       type: "laporan",
@@ -502,13 +575,11 @@ async function submitLaporan() {
       status: status,
       catatan: catatan,
       petugas: currentUser,
-      fotoKondisi: img1 ? await toBase64(img1) : "",
-      fotoQR: img2 ? await toBase64(img2) : "",
+      fotoKondisi: img1 ? await toBase64(img1) : "", // Hanya kirim 1 foto
     };
 
     await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
 
-    // Siapkan Share WA Data
     tempShareData = {
       nama: currentAsset.name,
       id: currentAsset.id,
@@ -516,13 +587,10 @@ async function submitLaporan() {
       status: status,
       catatan: catatan,
       img1: img1,
-      img2: img2,
     };
 
     closeModal("modalLoading");
     openModal("modalSuccess");
-
-    // Setup tombol WA
     document.getElementById("btnShareWA").onclick = executeShareWA;
   } catch (e) {
     closeModal("modalLoading");
@@ -532,7 +600,7 @@ async function submitLaporan() {
 
 async function executeShareWA() {
   if (!tempShareData) return;
-  const { nama, id, loc, status, catatan, img1, img2 } = tempShareData;
+  const { nama, id, loc, status, catatan, img1 } = tempShareData; // Hapus img2
 
   const caption = `*LAPORAN IT OPERASIONAL*\n🏢 PT Berlian Manyar Sejahtera\n\n📦 *ASET:* ${nama}\n🆔 *ID:* ${id}\n📍 *LOKASI:* ${loc}\n🔧 *STATUS:* ${status}\n📝 *NOTE:* ${catatan}\n👮 *OFFICER:* ${currentUser}`;
 
@@ -542,9 +610,7 @@ async function executeShareWA() {
   if (navigator.canShare && navigator.canShare({ files: filesArray })) {
     try {
       await navigator.share({ text: caption, files: filesArray });
-    } catch (err) {
-      console.log("Share canceled");
-    }
+    } catch (err) {}
   } else {
     window.open(`https://wa.me/?text=${encodeURIComponent(caption)}`, "_blank");
   }
@@ -720,23 +786,42 @@ async function loadServerJurnal() {
 function renderJurnal() {
   const container = document.getElementById("jurnalContainer");
   container.innerHTML = "";
+
+  if (jurnalLog.length === 0) {
+    container.innerHTML = `<div class="text-center py-10 text-slate-400 text-xs">Belum ada jurnal hari ini.</div>`;
+    return;
+  }
+
   jurnalLog.forEach((item) => {
-    const timeDisplay = item.time ? `• ${item.time}` : "";
-    const imgHtml = item.foto && item.foto.length > 10 ? `<img src="${item.foto}" class="w-full h-32 object-cover rounded-lg mt-2 border" loading="lazy">` : "";
+    // Cek apakah ada foto
+    let imgHtml = "";
+    if (item.foto && item.foto.includes("http")) {
+      // Tambahkan referrerpolicy agar Google Drive mau meload gambar
+      imgHtml = `<div class="mt-3 rounded-lg overflow-hidden border border-slate-100">
+                          <img src="${item.foto}" class="w-full h-40 object-cover bg-slate-50" loading="lazy" referrerpolicy="no-referrer" alt="Foto Kegiatan">
+                        </div>`;
+    }
+
+    const dateDisplay = item.date ? new Date(item.date).toLocaleDateString("id-ID", { weekday: "short", day: "numeric" }) : "";
 
     const html = `
-        <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group animate-fade-in">
-            <div class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-slate-50 bg-accent text-white shadow-sm shrink-0 z-10">
-                <span class="material-icons-round text-sm">work</span>
+        <div class="relative flex gap-4 animate-fade-in pb-6">
+            <div class="absolute left-[19px] top-8 bottom-0 w-0.5 bg-slate-200 -z-10"></div>
+            
+            <div class="flex-none w-10 h-10 rounded-full border-4 border-slate-50 bg-primary text-white shadow-sm flex items-center justify-center z-10">
+                <span class="material-icons-round text-sm">assignment</span>
             </div>
-            <div class="w-[calc(100%-3.5rem)] bg-white p-4 rounded-xl border border-slate-100 shadow-sm relative ml-4">
+
+            <div class="flex-1 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
                 <div class="flex justify-between items-start mb-1">
-                     <span class="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded">${item.date}</span>
-                     <span class="text-[9px] font-bold text-primary uppercase bg-blue-50 px-2 py-1 rounded-full">${item.petugas}</span>
+                     <span class="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded">${dateDisplay}</span>
+                     <span class="text-[9px] font-bold text-primary uppercase border border-primary/20 px-2 py-0.5 rounded-full">${item.petugas}</span>
                 </div>
-                <h4 class="font-bold text-slate-700 text-sm">${item.judul}</h4>
-                <p class="text-xs text-slate-500 mb-2 flex items-center gap-1"><span class="material-icons-round text-[10px]">place</span> ${item.lokasi}</p>
-                <p class="text-xs text-slate-600 border-t pt-2">${item.desc}</p>
+                <h4 class="font-bold text-slate-700 text-sm leading-tight">${item.judul}</h4>
+                <p class="text-[10px] text-slate-500 mb-2 flex items-center gap-1 mt-1">
+                    <span class="material-icons-round text-[10px]">place</span> ${item.lokasi}
+                </p>
+                <p class="text-xs text-slate-600 border-t border-dashed border-slate-200 pt-2 leading-relaxed">${item.desc}</p>
                 ${imgHtml}
             </div>
         </div>`;
@@ -823,34 +908,49 @@ async function loadDashboardStats() {
 }
 
 function renderCategoryList(category) {
-  // UI Tab Active State
+  // 1. Atur Tampilan Tombol Tab Aktif
   document.querySelectorAll(".stat-tab").forEach((el) => {
     el.className = "stat-tab py-2 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center transition-all opacity-60 scale-95";
   });
   let btnId = "btnCatNormal";
   if (category === "Maintenance") btnId = "btnCatMaint";
   if (category === "Rusak") btnId = "btnCatRusak";
-  document.getElementById(btnId).className = "stat-tab active py-2 rounded-xl border-2 border-primary/20 bg-primary/5 shadow-md flex flex-col items-center justify-center transition-all scale-100";
 
+  const activeBtn = document.getElementById(btnId);
+  if (activeBtn) {
+    activeBtn.className = "stat-tab active py-2 rounded-xl border-2 border-primary/20 bg-primary/5 shadow-md flex flex-col items-center justify-center transition-all scale-100";
+  }
+
+  // 2. Render List Item
   const container = document.getElementById("categoryListContainer");
   container.innerHTML = "";
+
+  // Ambil data dari cache (hasil fetch get_stats)
   const list = statsDataCache ? statsDataCache[category] || [] : [];
 
   if (list.length === 0) {
-    container.innerHTML = `<div class="text-center text-xs text-slate-400 py-4">Kosong.</div>`;
+    container.innerHTML = `<div class="text-center text-xs text-slate-400 py-4 border border-dashed border-slate-200 rounded-xl">Tidak ada aset ${category}.</div>`;
     return;
   }
 
   list.forEach((item) => {
-    let border = "border-emerald-400";
-    if (category === "Maintenance") border = "border-amber-400";
-    if (category === "Rusak") border = "border-red-500";
+    let borderClass = "border-emerald-400";
+    if (category === "Maintenance") borderClass = "border-amber-400";
+    if (category === "Rusak") borderClass = "border-red-500";
 
     const div = document.createElement("div");
-    div.className = `bg-white p-3 rounded-xl border-l-4 ${border} shadow-sm mb-2`;
+    div.className = `bg-white p-3 rounded-xl border-l-4 ${borderClass} shadow-sm mb-2 active:scale-[0.98] transition-transform cursor-pointer flex justify-between items-center`;
+
+    // --- TAMBAHAN PENTING: ONCLICK ---
+    // Saat diklik, panggil fungsi buka detail
+    div.onclick = () => openAssetDetail(item, category);
+
     div.innerHTML = `
-            <h4 class="text-xs font-bold text-slate-700">${item.name}</h4>
-            <p class="text-[9px] font-mono text-slate-400">${item.id}</p>
+            <div>
+                <h4 class="text-xs font-bold text-slate-700">${item.name}</h4>
+                <p class="text-[9px] font-mono text-slate-400">${item.id} • ${item.location}</p>
+            </div>
+            <span class="material-icons-round text-slate-300 text-sm">chevron_right</span>
         `;
     container.appendChild(div);
   });
@@ -972,4 +1072,57 @@ function openToolModal() {
 function saveTool() {
   alert("Simpan Tool hanya lokal sementara.");
   closeModal("modalTool");
+}
+
+function openAssetDetail(item, status) {
+  // Isi Data Teks
+  document.getElementById("detailName").innerText = item.name;
+  document.getElementById("detailDate").innerText = "Terakhir dicek: " + new Date(item.date).toLocaleDateString("id-ID");
+  document.getElementById("detailNote").innerText = item.note || "-";
+
+  const badge = document.getElementById("detailStatusBadge");
+  badge.innerText = status;
+  badge.className = `px-2 py-1 rounded text-[10px] font-bold uppercase mb-1 inline-block ${status === "Rusak" ? "bg-red-100 text-red-600" : status === "Maintenance" ? "bg-amber-100 text-amber-600" : "bg-emerald-100 text-emerald-600"}`;
+
+  // --- LOGIKA FOTO ---
+  const btn = document.getElementById("btnLoadImg");
+  const wrapper = document.getElementById("imgWrapper");
+  const img = document.getElementById("detailImgDisplay");
+
+  wrapper.classList.add("hidden");
+  img.src = "";
+
+  // Cek URL foto dari Backend (Sekarang Code.gs sudah kirim data 'photo')
+  if (item.photo && item.photo.length > 10) {
+    currentDetailPhotoUrl = item.photo;
+    btn.classList.remove("hidden");
+    btn.innerText = "LIHAT FOTO TERAKHIR";
+    btn.disabled = false;
+    btn.onclick = loadDetailImage; // Re-bind onclick
+  } else {
+    currentDetailPhotoUrl = "";
+    btn.classList.add("hidden");
+  }
+  openModal("modalAssetDetail");
+}
+
+function loadDetailImage() {
+  const btn = document.getElementById("btnLoadImg");
+  const wrapper = document.getElementById("imgWrapper");
+  const img = document.getElementById("detailImgDisplay");
+
+  if (!currentDetailPhotoUrl) return;
+
+  btn.innerHTML = `<span class="material-icons-round animate-spin">sync</span> MEMUAT...`;
+  btn.disabled = true;
+
+  img.src = currentDetailPhotoUrl;
+  img.onload = () => {
+    wrapper.classList.remove("hidden");
+    btn.classList.add("hidden");
+  };
+  img.onerror = () => {
+    btn.innerText = "FOTO TIDAK DITEMUKAN / ERROR";
+    btn.className = "w-full bg-red-50 text-red-500 py-3 rounded-xl font-bold text-xs";
+  };
 }
