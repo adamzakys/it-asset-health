@@ -7,15 +7,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+
     <link rel="stylesheet" href="style.css" />
-    <script src="https://cdn.jsdelivr.net/gh/ushelp/EasyQRCodeJS/dist/easy.qrcode.min.js"></script>
+    <link rel="icon" type="image/x-icon" href="Berlian-Manyar-Sejahtera-New-Thumbnail.jpg" />
+
     <script>
       tailwind.config = {
         theme: {
           extend: {
             colors: {
-              // WARNA BRANDING BMS TERBARU (Koreksi)
-              primary: "#2596be", // Biru Cerah BMS
+              primary: "#2596be", // Biru BMS
               accent: "#ff6600", // Oranye BMS
               secondary: "#e0f2fe",
             },
@@ -28,8 +31,7 @@
   <body class="text-slate-800 antialiased pb-28 select-none touch-manipulation">
     <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b-2 border-accent px-4 py-3 flex justify-between items-center shadow-md">
       <div class="flex items-center gap-3">
-        <img src="Berlian-Manyar-Sejahtera-New-Thumbnail.webp" alt="BMS Logo" class="w-14 h-auto object-contain" />
-
+        <img src="Berlian-Manyar-Sejahtera-New-Thumbnail.jpg" alt="BMS Logo" class="w-14 h-auto object-contain" />
         <div>
           <h1 class="text-lg font-bold text-primary tracking-tight leading-none" id="headerTitle">Beranda</h1>
           <p class="text-[10px] text-accent uppercase tracking-widest font-bold mt-1">Asset Management</p>
@@ -39,68 +41,102 @@
 
     <main class="max-w-md mx-auto p-4 min-h-[80vh]">
       <section id="tab-home" class="tab-section active space-y-6">
-        <div class="bg-primary text-white p-5 rounded-2xl shadow-lg shadow-primary/20 relative overflow-hidden group transition-all hover:shadow-xl">
-          <div class="relative z-10 flex items-center gap-4">
-            <div class="flex-1">
-              <p class="text-[10px] text-orange-100 font-bold uppercase tracking-wider mb-1">Current Officer</p>
-              <h2 class="text-xl font-bold flex items-center gap-2 cursor-pointer hover:text-orange-200 transition-colors" onclick="ubahNamaUser()">
-                <span id="userNameDisplay">...</span>
-                <span class="material-icons-round text-sm opacity-70">edit</span>
-              </h2>
+        <div class="bg-primary text-white p-5 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl group-hover:bg-white/20 transition-all duration-700"></div>
+          <div class="relative z-10">
+            <div class="flex justify-between items-start">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30 shadow-inner">
+                  <span class="material-icons-round text-2xl">person</span>
+                </div>
+                <div>
+                  <p class="text-[10px] text-blue-100 uppercase tracking-wider font-bold">Officer on Duty</p>
+                  <h2 class="text-xl font-bold leading-none" id="userNameDisplay">Memuat...</h2>
+                </div>
+              </div>
+              <button onclick="ubahNamaUser()" class="bg-white/10 hover:bg-white/20 p-2 rounded-xl backdrop-blur-md border border-white/20 transition-all active:scale-90">
+                <span class="material-icons-round text-sm">edit</span>
+              </button>
+            </div>
+
+            <div class="mt-6 flex gap-3">
+              <div class="bg-white/10 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-white/10 flex-1">
+                <span class="block text-2xl font-bold" id="statToday">0</span>
+                <span class="text-[9px] text-blue-100 uppercase font-bold opacity-80">Laporan Hari Ini</span>
+              </div>
+              <div class="bg-white/10 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-white/10 flex-1">
+                <span class="block text-2xl font-bold" id="statPending">0</span>
+                <span class="text-[9px] text-blue-100 uppercase font-bold opacity-80">Perlu Dicek</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div>
-          <div class="mb-3 px-1">
-            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider border-l-4 border-accent pl-2 mb-3">Aktivitas Tim (Live)</h3>
+        <div class="bg-slate-200 p-1 rounded-xl flex relative mb-4">
+          <div id="subTabBg" class="absolute left-1 top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-sm transition-all duration-300"></div>
+          <button onclick="switchHomeSub('feed')" class="flex-1 relative z-10 py-2 text-xs font-bold text-center transition-colors duration-300 text-primary" id="btnSubFeed">Aktivitas</button>
+          <button onclick="switchHomeSub('stats')" class="flex-1 relative z-10 py-2 text-xs font-bold text-center transition-colors duration-300 text-slate-500" id="btnSubStats">Statistik</button>
+        </div>
 
+        <div id="view-feed" class="animate-fade-in">
+          <div class="mb-3 px-1">
             <div class="relative mb-3">
               <span class="material-icons-round absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
-              <input
-                type="text"
-                id="feedSearch"
-                onkeyup="filterFeed()"
-                placeholder="Cari nama petugas / kegiatan..."
-                class="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs focus:outline-none focus:border-accent shadow-sm"
-              />
+              <input type="text" id="feedSearch" onkeyup="filterFeed()" placeholder="Cari aktivitas..." class="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs focus:outline-none focus:border-accent shadow-sm" />
             </div>
-
             <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" id="feedFilters">
               <button onclick="setFeedFilter('ALL', this)" class="filter-chip active px-3 py-1.5 rounded-full text-[10px] font-bold border border-slate-200 bg-primary text-white whitespace-nowrap transition-colors">Semua</button>
-              <button onclick="setFeedFilter('LAPOR', this)" class="filter-chip px-3 py-1.5 rounded-full text-[10px] font-bold border border-slate-200 bg-white text-slate-500 whitespace-nowrap transition-colors">Maintenance</button>
-              <button onclick="setFeedFilter('JURNAL', this)" class="filter-chip px-3 py-1.5 rounded-full text-[10px] font-bold border border-slate-200 bg-white text-slate-500 whitespace-nowrap transition-colors">Dokumentasi</button>
-              <button onclick="setFeedFilter('INPUT', this)" class="filter-chip px-3 py-1.5 rounded-full text-[10px] font-bold border border-slate-200 bg-white text-slate-500 whitespace-nowrap transition-colors">Master Data</button>
+              <button onclick="setFeedFilter('LAPOR', this)" class="filter-chip px-3 py-1.5 rounded-full text-[10px] font-bold border border-slate-200 bg-white text-slate-500 whitespace-nowrap transition-colors">Laporan</button>
+              <button onclick="setFeedFilter('JURNAL', this)" class="filter-chip px-3 py-1.5 rounded-full text-[10px] font-bold border border-slate-200 bg-white text-slate-500 whitespace-nowrap transition-colors">Jurnal</button>
             </div>
           </div>
-
           <div id="unifiedActivityLog" class="space-y-3 pb-4 min-h-[200px]"></div>
+        </div>
+
+        <div id="view-stats" class="hidden animate-fade-in space-y-4">
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 border-l-4 border-primary pl-2">Ringkasan</h3>
+            <div class="relative h-40 w-full flex justify-center">
+              <canvas id="chartStatus"></canvas>
+              <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span class="text-2xl font-bold text-slate-700" id="totalAssetStat">0</span>
+                <span class="text-[9px] text-slate-400 uppercase">Total Unit</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="grid grid-cols-3 gap-2 mb-3">
+              <button onclick="renderCategoryList('Normal')" id="btnCatNormal" class="stat-tab active py-2 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center transition-all">
+                <span class="text-lg font-bold text-emerald-500" id="countNormal">0</span>
+                <span class="text-[9px] font-bold text-slate-400 uppercase">Normal</span>
+              </button>
+              <button onclick="renderCategoryList('Maintenance')" id="btnCatMaint" class="stat-tab py-2 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center transition-all">
+                <span class="text-lg font-bold text-amber-500" id="countMaint">0</span>
+                <span class="text-[9px] font-bold text-slate-400 uppercase">Maint.</span>
+              </button>
+              <button onclick="renderCategoryList('Rusak')" id="btnCatRusak" class="stat-tab py-2 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center transition-all">
+                <span class="text-lg font-bold text-red-500" id="countRusak">0</span>
+                <span class="text-[9px] font-bold text-slate-400 uppercase">Rusak</span>
+              </button>
+            </div>
+            <div id="categoryListContainer" class="space-y-2 pb-10 min-h-[200px]"></div>
+          </div>
         </div>
       </section>
 
       <section id="tab-patrol" class="tab-section hidden">
         <div id="patrol-list-view">
           <div class="flex gap-2 mb-4">
-            <input
-              type="text"
-              id="searchInput"
-              class="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent shadow-sm transition-all"
-              placeholder="🔍 Cari ID / Perangkat..."
-            />
-
-            <button onclick="doSearch()" class="bg-white text-slate-600 px-3 rounded-xl border border-slate-200 shadow-sm hover:border-accent hover:text-accent transition-colors">
-              <span class="material-icons-round">search</span>
-            </button>
-
+            <input type="text" id="searchInput" class="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent shadow-sm transition-all" placeholder="🔍 Cari ID / Perangkat..." />
+            <button onclick="doSearch()" class="bg-white text-slate-600 px-3 rounded-xl border border-slate-200 shadow-sm hover:border-accent hover:text-accent transition-colors"><span class="material-icons-round">search</span></button>
             <button onclick="openModal('modalAddAsset')" class="bg-primary text-white px-3 rounded-xl shadow-lg shadow-primary/20 active:translate-y-1 transition-all flex items-center justify-center">
               <span class="material-icons-round">add</span>
             </button>
           </div>
-
           <div id="asset-results" class="space-y-3 pb-20">
             <div class="text-center p-10 text-slate-300 text-sm flex flex-col items-center animate-pulse">
               <span class="material-icons-round text-5xl mb-2 text-slate-200">qr_code_scanner</span>
-              Siap memindai...
+              Gunakan tombol scan di bawah<br />atau ketik ID aset.
             </div>
           </div>
         </div>
@@ -128,12 +164,10 @@
               </div>
               <input type="hidden" id="statusInput" value="Normal" />
             </div>
-
             <div>
               <label class="block text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest">Catatan Officer</label>
               <textarea id="catatanInput" rows="2" class="w-full bg-slate-50 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-accent transition-all" placeholder="Detail kendala..."></textarea>
             </div>
-
             <div class="grid grid-cols-2 gap-3">
               <div class="relative h-28 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 hover:border-accent flex flex-col items-center justify-center overflow-hidden transition-colors group">
                 <div class="group-hover:scale-110 transition-transform duration-300 flex flex-col items-center">
@@ -154,19 +188,14 @@
             </div>
             <div class="pt-2">
               <div class="flex justify-between items-center mb-2" onclick="toggleHistory()" style="cursor: pointer">
-                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest"> Riwayat Perbaikan (Server) </label>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest"> Riwayat Perbaikan </label>
                 <span class="material-icons-round text-slate-400 text-sm" id="histIcon">expand_more</span>
               </div>
-
-              <div id="histLoading" class="hidden text-center py-2">
-                <span class="material-icons-round animate-spin text-slate-300 text-sm">sync</span>
-              </div>
-
+              <div id="histLoading" class="hidden text-center py-2"><span class="material-icons-round animate-spin text-slate-300 text-sm">sync</span></div>
               <div id="assetHistoryList" class="space-y-2 hidden max-h-40 overflow-y-auto bg-slate-50 p-2 rounded-xl border border-slate-100"></div>
             </div>
             <button onclick="submitLaporan()" class="w-full bg-accent hover:bg-orange-600 text-white py-4 rounded-xl font-bold text-sm shadow-xl shadow-accent/20 active:scale-[0.98] transition-all flex justify-center items-center gap-2">
-              <span>KIRIM LAPORAN</span>
-              <span class="material-icons-round text-sm">send</span>
+              <span>KIRIM LAPORAN</span><span class="material-icons-round text-sm">send</span>
             </button>
           </div>
         </div>
@@ -175,12 +204,10 @@
       <section id="tab-tools" class="tab-section hidden space-y-4">
         <div class="flex justify-between items-center mb-2 px-1">
           <h3 class="font-bold text-slate-600 text-sm uppercase tracking-wider border-l-4 border-accent pl-2">Utility Tools</h3>
-
           <div class="flex gap-2">
             <button onclick="openModal('modalQRGenerator')" class="text-[10px] bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-full font-bold shadow-sm active:scale-95 transition-transform flex items-center gap-1">
-              <span class="material-icons-round text-xs">qr_code_2</span> Label
+              <span class="material-icons-round text-xs">qr_code_2</span> Label Maker
             </button>
-
             <button onclick="openToolModal()" class="text-[10px] bg-primary text-white px-3 py-1.5 rounded-full font-bold shadow-sm active:scale-95 transition-transform flex items-center gap-1">
               <span class="material-icons-round text-xs">add</span> Custom
             </button>
@@ -189,13 +216,6 @@
         <div id="toolsContainer" class="space-y-3 pb-20"></div>
       </section>
 
-      <section id="tab-log" class="tab-section hidden flex flex-col items-center justify-center h-[60vh] text-center">
-        <div class="bg-slate-100 p-6 rounded-full mb-4">
-          <span class="material-icons-round text-5xl text-slate-300">history_edu</span>
-        </div>
-        <h3 class="font-bold text-slate-600">E-Logbook</h3>
-        <p class="text-slate-400 text-xs mt-1 max-w-[200px]">Modul pencatatan harian digital sedang disiapkan.</p>
-      </section>
       <section id="tab-jurnal" class="tab-section hidden relative min-h-screen pb-20">
         <div class="flex justify-between items-center mb-4 px-1">
           <div>
@@ -203,15 +223,18 @@
             <p class="text-[10px] text-slate-400 pl-3">Dokumentasi pekerjaan tim IT</p>
           </div>
           <button onclick="openModal('modalJurnal')" class="bg-primary text-white px-4 py-2 rounded-xl shadow-lg shadow-primary/30 active:scale-95 transition-transform flex items-center gap-2">
-            <span class="material-icons-round text-sm">add_a_photo</span>
-            <span class="text-xs font-bold">Post</span>
+            <span class="material-icons-round text-sm">add_a_photo</span><span class="text-xs font-bold">Post</span>
           </button>
         </div>
-        <div
-          id="jurnalContainer"
-          class="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent"
-        ></div>
+        <div id="jurnalContainer" class="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:h-full before:w-0.5 before:bg-slate-200"></div>
       </section>
+
+      <section id="tab-log" class="tab-section hidden flex flex-col items-center justify-center h-[60vh] text-center">
+        <div class="bg-slate-100 p-6 rounded-full mb-4"><span class="material-icons-round text-5xl text-slate-300">history_edu</span></div>
+        <h3 class="font-bold text-slate-600">E-Logbook</h3>
+        <p class="text-slate-400 text-xs mt-1">Fitur ini akan segera hadir.</p>
+      </section>
+
       <button
         onclick="openModal('modalAbout')"
         class="fixed bottom-24 right-4 z-30 bg-white text-primary w-9 h-9 rounded-full shadow-md border border-slate-200 flex items-center justify-center active:scale-90 transition-transform opacity-80 hover:opacity-100"
@@ -239,123 +262,11 @@
         <button class="nav-btn" onclick="switchTab('jurnal', this)"><span class="material-icons-round text-2xl mb-0.5">assignment</span><span class="text-[9px] font-bold">Jurnal</span></button>
       </div>
     </nav>
-    <div id="modalQRGenerator" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden items-end sm:items-center justify-center p-4">
-      <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl animate-scale-up max-h-[90vh] overflow-y-auto">
-        <h3 class="font-bold text-lg mb-1 text-primary">Generator Label Aset</h3>
-        <p class="text-xs text-slate-400 mb-5">Buat QR Code atau Label Stiker Siap Cetak.</p>
-
-        <div class="space-y-4">
-          <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100">
-            <span class="text-sm font-bold text-slate-600">Mode:</span>
-            <div class="flex items-center">
-              <span class="text-xs text-slate-400 mr-2 font-bold" id="labelModeText">Hanya QR</span>
-              <div class="relative inline-block w-12 h-6 align-middle select-none transition duration-200 ease-in">
-                <input
-                  type="checkbox"
-                  name="toggle"
-                  id="toggleLabelMode"
-                  class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer transition-all duration-500 z-10 right-6"
-                  onchange="toggleLabelInputs()"
-                />
-                <label for="toggleLabelMode" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer transition-all duration-500 relative"></label>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase">Nomor Aset (ID) *</label>
-            <input type="text" id="gen_qr_id" placeholder="Cth: 2MO37" class="w-full border-2 border-slate-100 bg-slate-50 p-3 rounded-xl text-sm font-bold focus:border-primary outline-none uppercase font-mono" />
-          </div>
-
-          <div id="extraLabelInputs" class="hidden space-y-3 border-l-4 border-primary pl-3 transition-all">
-            <div>
-              <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase">Nama Aset</label>
-              <input type="text" id="gen_label_nama" placeholder="Cth: Monitor" class="w-full border-2 border-slate-100 p-2 rounded-lg text-sm focus:border-primary outline-none" />
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase">Tanggal Pengadaan</label>
-                <input type="date" id="gen_label_tgl" class="w-full border-2 border-slate-100 p-2 rounded-lg text-sm focus:border-primary outline-none text-slate-600" />
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase">Divisi / Lokasi</label>
-                <input type="text" id="gen_label_divisi" placeholder="Cth: TIK/Port" class="w-full border-2 border-slate-100 p-2 rounded-lg text-sm focus:border-primary outline-none" />
-              </div>
-            </div>
-          </div>
-
-          <button onclick="generateQR()" class="w-full bg-primary text-white py-3 rounded-xl font-bold shadow-lg shadow-primary/20 active:scale-95 transition-transform flex justify-center items-center gap-2">
-            <span class="material-icons-round">print</span> Buat Label
-          </button>
-
-          <div id="qrResultArea" class="hidden flex flex-col items-center justify-center bg-slate-100 p-6 rounded-2xl border border-slate-200 mt-4 transition-all">
-            <p class="text-[10px] text-slate-400 font-bold mb-3 tracking-widest">PREVIEW HASIL</p>
-
-            <div id="qrcode_canvas" class="bg-white p-1 shadow-md rounded mb-4 flex justify-center items-center"></div>
-
-            <button onclick="downloadQRImage()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-full font-bold text-sm shadow-md active:scale-95 transition-transform flex items-center gap-2">
-              <span class="material-icons-round text-lg">download</span> Simpan Gambar
-            </button>
-          </div>
-
-          <button onclick="closeModal('modalQRGenerator')" class="w-full text-slate-500 py-3 rounded-xl font-bold bg-slate-100 mt-2 hover:bg-slate-200">Tutup</button>
-        </div>
-      </div>
-    </div>
-    <div id="temp_qr_holder" style="display: none"></div>
-    <div id="modalJurnal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden items-end sm:items-center justify-center p-4">
-      <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-scale-up max-h-[90vh] overflow-y-auto">
-        <h3 class="font-bold text-lg mb-1 text-primary">Dokumentasi Pekerjaan</h3>
-        <p class="text-xs text-slate-400 mb-5">Catat kegiatan non-rutin/insidental.</p>
-
-        <div class="space-y-4">
-          <input type="text" id="jurnal_judul" placeholder="Judul Kegiatan (Cth: Relokasi CCTV)" class="w-full border-2 border-slate-100 bg-slate-50 p-3 rounded-xl text-sm font-bold focus:border-accent outline-none" />
-          <input type="text" id="jurnal_lokasi" placeholder="Lokasi Pengerjaan" class="w-full border-2 border-slate-100 bg-slate-50 p-3 rounded-xl text-sm focus:border-accent outline-none" />
-          <textarea id="jurnal_desc" rows="3" placeholder="Deskripsi teknis pekerjaan..." class="w-full border-2 border-slate-100 bg-slate-50 p-3 rounded-xl text-sm focus:border-accent outline-none"></textarea>
-
-          <div class="relative h-40 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 hover:border-accent flex flex-col items-center justify-center overflow-hidden transition-colors group">
-            <div class="group-hover:scale-110 transition-transform duration-300 flex flex-col items-center">
-              <span class="material-icons-round text-slate-300 text-3xl group-hover:text-accent">add_a_photo</span>
-              <span class="text-[10px] text-slate-400 mt-2 font-bold group-hover:text-accent">FOTO KEGIATAN</span>
-            </div>
-            <img id="prev_jurnal" class="absolute inset-0 w-full h-full object-cover hidden" />
-            <input type="file" id="file_jurnal" accept="image/*" capture="environment" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="previewImg(this, 'prev_jurnal')" />
-          </div>
-
-          <div class="flex gap-2 pt-2">
-            <button onclick="closeModal('modalJurnal')" class="flex-1 bg-slate-100 text-slate-500 py-3 rounded-xl font-bold">Batal</button>
-            <button onclick="submitJurnal()" class="flex-1 bg-primary text-white py-3 rounded-xl font-bold shadow-lg shadow-primary/20 active:scale-95 transition-transform">Posting</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div id="modalAbout" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] hidden items-center justify-center p-6 animate-fade-in">
-      <div class="bg-white w-full max-w-xs rounded-3xl p-6 shadow-2xl relative text-center overflow-hidden">
-        <div class="absolute top-0 left-0 w-full h-2 bg-primary"></div>
-
-        <img src="Berlian-Manyar-Sejahtera-New-Thumbnail.webp" alt="BMS Logo" class="w-20 h-auto mx-auto mb-4 object-contain drop-shadow-sm" />
-
-        <h3 class="font-bold text-lg text-primary leading-tight">BMS Asset Ops</h3>
-        <p class="text-xs text-accent font-bold mb-4 uppercase tracking-wider">Enterprise Edition v2.5</p>
-
-        <p class="text-xs text-slate-600 mb-6 leading-relaxed px-2">Aplikasi(testing) manajemen aset & operasional IT<br />PT Berlian Manyar Sejahtera.</p>
-
-        <a
-          id="btnHelpWA"
-          target="_blank"
-          class="w-full bg-[#25D366] hover:bg-[#128C7E] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 active:scale-95 transition-transform cursor-pointer no-underline"
-        >
-          <!-- <span class="material-icons-round">whatsapp</span> -->
-          Hubungi Pengembang
-        </a>
-        <button onclick="closeModal('modalAbout')" class="mt-4 text-xs text-slate-400 hover:text-slate-600 font-bold py-2 w-full">TUTUP</button>
-      </div>
-    </div>
 
     <div id="modalScanner" class="fixed inset-0 bg-black z-[100] hidden flex-col animate-fade-in">
-      <div class="flex-1 relative bg-black">
-        <div id="reader" class="w-full h-full"></div>
-        <div class="absolute inset-0 border-[40px] border-black/60 pointer-events-none flex items-center justify-center">
+      <div class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
+        <div id="reader" class="w-full max-w-sm h-auto bg-black"></div>
+        <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
           <div class="w-64 h-64 border-2 border-white/30 rounded-3xl relative">
             <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-accent rounded-tl-xl"></div>
             <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-accent rounded-tr-xl"></div>
@@ -366,7 +277,7 @@
         </div>
       </div>
       <div class="p-6 bg-black flex justify-between items-center text-white backdrop-blur-sm bg-opacity-80">
-        <p class="text-sm font-medium opacity-90">Scan QR Code</p>
+        <p class="text-sm font-medium opacity-90">Arahkan kamera ke QR Code</p>
         <button onclick="stopScanner()" class="bg-white/10 hover:bg-white/20 px-5 py-2 rounded-full text-xs font-bold transition-colors">BATAL</button>
       </div>
     </div>
@@ -375,23 +286,105 @@
       <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-scale-up relative">
         <h3 class="font-bold text-xl mb-1 text-primary">Tambah Master Aset</h3>
         <p class="text-xs text-slate-400 mb-5">Input data perangkat baru.</p>
-
-        <div class="space-y-4">
-          <div class="flex gap-2">
-            <input type="text" id="new_id" placeholder="ID Perangkat (Unik)" class="flex-1 border-2 border-slate-100 bg-slate-50 focus:bg-white p-3 rounded-xl text-sm outline-none focus:border-primary font-mono transition-colors" />
-            <button onclick="scanForInput('new_id')" class="bg-accent text-white p-3 rounded-xl shadow-md active:scale-95 transition-transform">
+        <div class="space-y-3">
+          <div class="flex gap-2 items-stretch">
+            <div class="flex-1 relative">
+              <input
+                type="text"
+                id="new_id"
+                placeholder="ID Perangkat"
+                class="w-full h-full border-2 border-slate-100 bg-slate-50 focus:bg-white px-4 rounded-xl text-sm outline-none focus:border-primary font-mono font-bold transition-colors uppercase"
+              />
+            </div>
+            <button onclick="scanForInput('new_id')" class="bg-accent text-white w-12 rounded-xl shadow-md active:scale-95 transition-transform flex items-center justify-center">
               <span class="material-icons-round">qr_code_scanner</span>
             </button>
           </div>
           <input type="text" id="new_name" placeholder="Nama Perangkat" class="w-full border-2 border-slate-100 bg-slate-50 focus:bg-white p-3 rounded-xl text-sm outline-none focus:border-primary transition-colors" />
           <input type="text" id="new_loc" placeholder="Lokasi Penempatan" class="w-full border-2 border-slate-100 bg-slate-50 focus:bg-white p-3 rounded-xl text-sm outline-none focus:border-primary transition-colors" />
           <div class="relative">
-            <span class="absolute left-3 top-3 text-slate-400 text-[10px] font-bold">TGL</span>
-            <input type="date" id="new_date" class="w-full border-2 border-slate-100 bg-slate-50 focus:bg-white p-3 pl-12 rounded-xl text-sm outline-none focus:border-primary text-slate-600 transition-colors" />
+            <span class="absolute left-3 top-3.5 text-slate-400 text-[10px] font-bold z-10">TGL</span>
+            <input type="date" id="new_date" class="w-full border-2 border-slate-100 bg-slate-50 focus:bg-white p-3 pl-10 rounded-xl text-sm outline-none focus:border-primary text-slate-600 transition-colors relative z-0" />
           </div>
-          <div class="grid grid-cols-2 gap-3 pt-2">
+          <div class="grid grid-cols-2 gap-3 pt-3">
             <button onclick="closeModal('modalAddAsset')" class="w-full text-slate-500 py-3 rounded-xl font-bold bg-slate-100 hover:bg-slate-200 transition-colors">Batal</button>
             <button onclick="submitNewAsset()" class="w-full bg-primary text-white py-3 rounded-xl font-bold shadow-lg shadow-primary/20 active:scale-95 transition-transform">Simpan</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="modalQRGenerator" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden items-end sm:items-center justify-center p-4">
+      <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl animate-scale-up max-h-[90vh] overflow-y-auto">
+        <h3 class="font-bold text-lg mb-1 text-primary">Generator Label</h3>
+        <p class="text-xs text-slate-400 mb-5">Buat stiker QR Code Aset.</p>
+        <div class="space-y-4">
+          <label class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100 cursor-pointer">
+            <span class="text-sm font-bold text-slate-600" id="labelModeText">Hanya QR Code</span>
+            <div class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="toggleLabelMode" class="sr-only peer" onchange="toggleLabelInputs()" />
+              <div
+                class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"
+              ></div>
+            </div>
+          </label>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase">ID Aset (Wajib)</label>
+            <input type="text" id="gen_qr_id" placeholder="CTH: PC-IT-01" class="w-full border-2 border-slate-100 bg-slate-50 p-3 rounded-xl text-sm font-bold focus:border-primary outline-none uppercase font-mono" />
+          </div>
+          <div id="extraLabelInputs" class="hidden space-y-3 bg-blue-50/50 p-3 rounded-xl border border-blue-100 animate-fade-in">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase">Nama Barang</label>
+              <input type="text" id="gen_label_nama" class="w-full border border-slate-200 p-2 rounded-lg text-sm focus:border-primary outline-none" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase">Tanggal</label>
+                <input type="date" id="gen_label_tgl" class="w-full border border-slate-200 p-2 rounded-lg text-sm focus:border-primary outline-none text-slate-600" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase">Divisi</label>
+                <input type="text" id="gen_label_divisi" class="w-full border border-slate-200 p-2 rounded-lg text-sm focus:border-primary outline-none" />
+              </div>
+            </div>
+          </div>
+          <button onclick="generateQR()" class="w-full bg-primary text-white py-3 rounded-xl font-bold shadow-lg shadow-primary/20 active:scale-95 transition-transform flex justify-center items-center gap-2">
+            <span class="material-icons-round">print</span> Generate Label
+          </button>
+          <div id="qrResultArea" class="hidden flex flex-col items-center justify-center bg-slate-100 p-4 rounded-2xl border border-slate-200 mt-2">
+            <div id="qrcode_canvas" class="bg-white p-1 shadow-md rounded mb-3 max-w-full"></div>
+            <div class="flex gap-2 w-full">
+              <button onclick="downloadQRImage()" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-xl font-bold text-xs shadow-md active:scale-95 transition-transform flex items-center justify-center gap-1">
+                <span class="material-icons-round text-sm">download</span> Simpan
+              </button>
+              <button onclick="closeModal('modalQRGenerator')" class="flex-1 bg-white text-slate-500 border border-slate-200 py-2 rounded-xl font-bold text-xs hover:bg-slate-50">Tutup</button>
+            </div>
+          </div>
+          <button onclick="closeModal('modalQRGenerator')" class="w-full text-slate-400 text-xs py-2 hover:text-slate-600">Batal</button>
+        </div>
+      </div>
+    </div>
+    <div id="temp_qr_holder" style="display: none"></div>
+
+    <div id="modalJurnal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden items-end sm:items-center justify-center p-4">
+      <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-scale-up max-h-[90vh] overflow-y-auto">
+        <h3 class="font-bold text-lg mb-1 text-primary">Dokumentasi Pekerjaan</h3>
+        <p class="text-xs text-slate-400 mb-5">Catat kegiatan non-rutin/insidental.</p>
+        <div class="space-y-4">
+          <input type="text" id="jurnal_judul" placeholder="Judul Kegiatan (Cth: Relokasi CCTV)" class="w-full border-2 border-slate-100 bg-slate-50 p-3 rounded-xl text-sm font-bold focus:border-accent outline-none" />
+          <input type="text" id="jurnal_lokasi" placeholder="Lokasi Pengerjaan" class="w-full border-2 border-slate-100 bg-slate-50 p-3 rounded-xl text-sm focus:border-accent outline-none" />
+          <textarea id="jurnal_desc" rows="3" placeholder="Deskripsi teknis pekerjaan..." class="w-full border-2 border-slate-100 bg-slate-50 p-3 rounded-xl text-sm focus:border-accent outline-none"></textarea>
+          <div class="relative h-40 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 hover:border-accent flex flex-col items-center justify-center overflow-hidden transition-colors group">
+            <div class="group-hover:scale-110 transition-transform duration-300 flex flex-col items-center">
+              <span class="material-icons-round text-slate-300 text-3xl group-hover:text-accent">add_a_photo</span>
+              <span class="text-[10px] text-slate-400 mt-2 font-bold group-hover:text-accent">FOTO KEGIATAN</span>
+            </div>
+            <img id="prev_jurnal" class="absolute inset-0 w-full h-full object-cover hidden" />
+            <input type="file" id="file_jurnal" accept="image/*" capture="environment" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="previewImg(this, 'prev_jurnal')" />
+          </div>
+          <div class="flex gap-2 pt-2">
+            <button onclick="closeModal('modalJurnal')" class="flex-1 bg-slate-100 text-slate-500 py-3 rounded-xl font-bold">Batal</button>
+            <button onclick="submitJurnal()" class="flex-1 bg-primary text-white py-3 rounded-xl font-bold shadow-lg shadow-primary/20 active:scale-95 transition-transform">Posting</button>
           </div>
         </div>
       </div>
@@ -406,16 +399,10 @@
           <input type="text" id="tool_desc" placeholder="Deskripsi pendek" class="w-full border p-3 rounded-xl text-sm focus:border-primary outline-none" />
           <input type="text" id="tool_icon" placeholder="Icon Material (cth: build)" class="w-full border p-3 rounded-xl text-sm focus:border-primary outline-none" />
           <textarea id="tool_cmd" rows="3" placeholder="Script Command..." class="w-full border p-3 rounded-xl text-xs font-mono bg-slate-900 text-green-400 focus:border-primary outline-none"></textarea>
-
-          <label class="block text-[10px] font-bold text-slate-400 mt-2">LINK GAMBAR (Opsional)</label>
-          <input type="text" id="tool_qr" placeholder="URL QR Code" class="w-full border p-3 rounded-xl text-sm mb-1 focus:border-primary outline-none" />
-          <input type="text" id="tool_img" placeholder="URL Tampilan Tool (Screenshot)" class="w-full border p-3 rounded-xl text-sm focus:border-primary outline-none" />
-
           <div class="flex gap-2 mt-4">
             <button onclick="closeModal('modalTool')" class="flex-1 bg-slate-100 text-slate-500 py-3 rounded-xl font-bold">Batal</button>
             <button onclick="saveTool()" class="flex-1 bg-primary text-white py-3 rounded-xl font-bold shadow-sm active:scale-95">Simpan</button>
           </div>
-          <button onclick="deleteTool()" id="btnDeleteTool" class="w-full text-red-500 py-3 text-xs font-bold mt-2 hover:bg-red-50 rounded-xl hidden">HAPUS TOOL INI</button>
         </div>
       </div>
     </div>
@@ -424,28 +411,38 @@
       <div class="bg-white w-full max-w-sm rounded-3xl p-6 text-center shadow-2xl relative overflow-hidden">
         <div class="absolute top-0 left-0 w-full h-2 bg-emerald-500"></div>
         <div class="mb-4 flex justify-center">
-          <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-2 animate-bounce-short">
-            <span class="material-icons-round text-5xl text-emerald-600">check_circle</span>
-          </div>
+          <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-2 animate-bounce-short"><span class="material-icons-round text-5xl text-emerald-600">check_circle</span></div>
         </div>
         <h3 class="text-xl font-bold text-slate-800 mb-2">Terkirim!</h3>
         <p class="text-sm text-slate-500 mb-6">Laporan berhasil dicatat di server.</p>
         <div class="space-y-3">
           <button id="btnShareWA" class="w-full bg-[#25D366] hover:bg-[#128C7E] text-white py-3.5 rounded-xl font-bold shadow-lg shadow-green-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
-            <span class="material-icons-round">share</span>
-            Kirim Bukti ke WhatsApp
+            <span class="material-icons-round">share</span> Kirim Bukti ke WhatsApp
           </button>
           <button onclick="closeSuccessModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold active:scale-95 transition-transform">Tutup & Kembali</button>
         </div>
       </div>
     </div>
-
     <div id="modalLoading" class="fixed inset-0 bg-primary/90 backdrop-blur-sm z-[110] hidden flex-col items-center justify-center animate-fade-in">
       <div class="w-12 h-12 border-4 border-white/30 rounded-full border-t-accent animate-spin mb-4"></div>
       <p class="text-white text-sm font-bold tracking-wide animate-pulse" id="loadingText">SINKRONISASI...</p>
+    </div>
+    <div id="modalAbout" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] hidden items-center justify-center p-6 animate-fade-in">
+      <div class="bg-white w-full max-w-xs rounded-3xl p-6 shadow-2xl relative text-center overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-2 bg-primary"></div>
+        <img src="Berlian-Manyar-Sejahtera-New-Thumbnail.jpg" alt="BMS Logo" class="w-20 h-auto mx-auto mb-4 object-contain drop-shadow-sm" />
+        <h3 class="font-bold text-lg text-primary leading-tight">BMS Asset Ops</h3>
+        <p class="text-xs text-accent font-bold mb-4 uppercase tracking-wider">Enterprise Edition v3.0</p>
+        <a
+          id="btnHelpWA"
+          target="_blank"
+          class="w-full bg-[#25D366] hover:bg-[#128C7E] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 active:scale-95 transition-transform cursor-pointer no-underline"
+          >Hubungi Support IT</a
+        >
+        <button onclick="closeModal('modalAbout')" class="mt-4 text-xs text-slate-400 hover:text-slate-600 font-bold py-2 w-full">TUTUP</button>
+      </div>
     </div>
 
     <script src="script.js"></script>
   </body>
 </html>
-
