@@ -9,9 +9,14 @@
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
-    <link rel="stylesheet" href="style.css" />
-    <link rel="icon" type="image/x-icon" href="Berlian-Manyar-Sejahtera-New-Thumbnail.webp" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="BMS Asset" />
 
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#2596be" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="icon" type="image/x-icon" href="Berlian-Manyar-Sejahtera-New-Thumbnail.jpg" />
     <script>
       tailwind.config = {
         theme: {
@@ -208,31 +213,61 @@
         <div id="toolsContainer" class="space-y-3 pb-20"></div>
       </section>
 
-      <section id="tab-jurnal" class="tab-section hidden relative min-h-screen pb-20">
-        <div class="flex justify-between items-center mb-4 px-1">
-          <div>
-            <h3 class="font-bold text-slate-600 text-sm uppercase tracking-wider border-l-4 border-accent pl-2">Daily Activity</h3>
-            <p class="text-[10px] text-slate-400 pl-3">Dokumentasi pekerjaan tim IT</p>
+      <section id="tab-jurnal" class="tab-section hidden relative min-h-screen pb-24">
+        <div class="sticky top-0 bg-slate-50 z-20 pb-2 pt-1">
+          <div class="flex justify-between items-center mb-3 px-1">
+            <div>
+              <h3 class="font-bold text-slate-600 text-sm uppercase tracking-wider border-l-4 border-accent pl-2">Daily Activity</h3>
+              <p class="text-[10px] text-slate-400 pl-3">Dokumentasi pekerjaan tim IT</p>
+            </div>
+            <button onclick="openModal('modalJurnal')" class="bg-primary text-white px-4 py-2 rounded-xl shadow-lg shadow-primary/30 active:scale-95 transition-transform flex items-center gap-2">
+              <span class="material-icons-round text-sm">add_a_photo</span>
+              <span class="text-xs font-bold">Post</span>
+            </button>
           </div>
-          <button onclick="openModal('modalJurnal')" class="bg-primary text-white px-4 py-2 rounded-xl shadow-lg shadow-primary/30 active:scale-95 transition-transform flex items-center gap-2">
-            <span class="material-icons-round text-sm">add_a_photo</span><span class="text-xs font-bold">Post</span>
-          </button>
+
+          <div class="relative px-1 mb-2">
+            <span class="material-icons-round absolute left-4 top-2.5 text-slate-400 text-sm">search</span>
+            <input
+              type="text"
+              id="jurnalSearchInput"
+              onkeyup="renderJurnal()"
+              placeholder="Cari kegiatan..."
+              class="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs focus:outline-none focus:border-accent shadow-sm"
+            />
+          </div>
         </div>
-        <div id="jurnalContainer" class="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:h-full before:w-0.5 before:bg-slate-200"></div>
+
+        <div
+          id="jurnalContainer"
+          class="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent"
+        ></div>
+
+        <div id="btnLoadMoreJurnal" class="hidden text-center pt-4 pb-8">
+          <button onclick="showOlderJurnal()" class="bg-white border border-slate-200 text-slate-500 px-4 py-2 rounded-full text-xs font-bold shadow-sm active:scale-95">Muat Lebih Banyak...</button>
+        </div>
       </section>
+
+      <button
+        id="btnBackToTop"
+        onclick="scrollToTop()"
+        class="fixed bottom-24 right-4 z-30 bg-slate-800 text-white w-10 h-10 rounded-full shadow-lg border border-slate-600 flex items-center justify-center active:scale-90 transition-all transform translate-y-20 opacity-0 hidden"
+      >
+        <span class="material-icons-round text-xl">arrow_upward</span>
+      </button>
+
+      <button
+        onclick="openModal('modalAbout')"
+        class="fixed bottom-24 right-16 z-30 bg-white text-primary w-9 h-9 rounded-full shadow-md border border-slate-200 flex items-center justify-center active:scale-90 transition-transform opacity-80 hover:opacity-100"
+      >
+        <span class="material-icons-round text-lg">info</span>
+      </button>
 
       <section id="tab-log" class="tab-section hidden flex flex-col items-center justify-center h-[60vh] text-center">
         <div class="bg-slate-100 p-6 rounded-full mb-4"><span class="material-icons-round text-5xl text-slate-300">history_edu</span></div>
         <h3 class="font-bold text-slate-600">E-Logbook</h3>
         <p class="text-slate-400 text-xs mt-1">Fitur ini akan segera hadir.</p>
       </section>
-
-      <button
-        onclick="openModal('modalAbout')"
-        class="fixed bottom-24 right-4 z-30 bg-white text-primary w-9 h-9 rounded-full shadow-md border border-slate-200 flex items-center justify-center active:scale-90 transition-transform opacity-80 hover:opacity-100"
-      >
-        <span class="material-icons-round text-lg">info</span>
-      </button>
     </main>
 
     <nav class="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-lg border-t border-slate-200 h-20 pb-4 z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
@@ -335,7 +370,38 @@
         </div>
       </div>
     </div>
+    <div id="modalInstall" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] hidden items-end sm:items-center justify-center p-4 animate-fade-in">
+      <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+        <div class="text-center mb-6">
+          <div class="w-16 h-16 bg-white rounded-2xl shadow-md mx-auto mb-3 p-2 border border-slate-100">
+            <img src="Berlian-Manyar-Sejahtera-New-Thumbnail.webp" class="w-full h-full object-contain" />
+          </div>
+          <h3 class="font-bold text-lg text-slate-800">Install Aplikasi</h3>
+          <p class="text-xs text-slate-500 px-4">Agar tampilan penuh & lebih nyaman, tambahkan ke layar utama HP Anda.</p>
+        </div>
 
+        <div class="space-y-4 mb-6">
+          <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <span class="material-icons-round text-blue-500 text-2xl">ios_share</span>
+            <div class="text-xs text-slate-600">
+              <span class="font-bold block text-slate-800">Pengguna iPhone (iOS)</span>
+              Tekan tombol <span class="font-bold">Share</span> di bawah browser, lalu pilih <span class="font-bold">"Add to Home Screen"</span>.
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <span class="material-icons-round text-green-600 text-2xl">more_vert</span>
+            <div class="text-xs text-slate-600">
+              <span class="font-bold block text-slate-800">Pengguna Android</span>
+              Tekan titik tiga di pojok kanan atas, lalu pilih <span class="font-bold">"Tambahkan ke Layar Utama"</span>.
+            </div>
+          </div>
+        </div>
+
+        <button onclick="closeInstallGuide()" class="w-full bg-primary text-white py-3 rounded-xl font-bold shadow-lg shadow-primary/20 active:scale-95 transition-transform">Saya Mengerti</button>
+        <button onclick="closeInstallGuide(true)" class="w-full text-slate-400 text-xs font-bold py-3 mt-1">Jangan Tampilkan Lagi</button>
+      </div>
+    </div>
     <div id="modalQRGenerator" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden items-end sm:items-center justify-center p-4">
       <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl animate-scale-up max-h-[90vh] overflow-y-auto">
         <h3 class="font-bold text-lg mb-1 text-primary">Generator Label</h3>
@@ -454,7 +520,7 @@
         <div class="absolute top-0 left-0 w-full h-2 bg-primary"></div>
         <img src="Berlian-Manyar-Sejahtera-New-Thumbnail.jpg" alt="BMS Logo" class="w-20 h-auto mx-auto mb-4 object-contain drop-shadow-sm" />
         <h3 class="font-bold text-lg text-primary leading-tight">BMS Asset Ops</h3>
-        <p class="text-xs text-accent font-bold mb-4 uppercase tracking-wider">Testing app management asset IT</p>
+        <p class="text-xs text-accent font-bold mb-4 uppercase tracking-wider">Enterprise Edition v3.0</p>
         <a
           id="btnHelpWA"
           target="_blank"
@@ -468,5 +534,3 @@
     <script src="script.js"></script>
   </body>
 </html>
-
-

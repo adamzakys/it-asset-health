@@ -201,17 +201,31 @@ function renderFeedList(data) {
   data.forEach((item) => {
     let icon = "history";
     let color = "bg-slate-100 text-slate-500";
+    let clickAction = ""; // Default tidak bisa diklik
+    let cursorClass = "";
+
     if (item.type === "LAPOR") {
       icon = "build";
       color = "bg-orange-50 text-accent";
+      // Laporan bisa diklik untuk lihat detail
+      cursorClass = "cursor-pointer hover:bg-slate-50 active:scale-[0.98] transition-all";
+      // Kita bind data item ke fungsi openAssetDetail
+      // Karena item feed struktur datanya beda dikit, kita sesuaikan passing-nya
+      clickAction = `onclick='openAssetDetailFromFeed(${JSON.stringify(item).replace(/'/g, "&#39;")})'`;
     }
+
     if (item.type === "JURNAL") {
       icon = "assignment";
       color = "bg-blue-50 text-primary";
+      // Jurnal tidak membuka modal detail aset, tapi mungkin bisa expand foto (nanti)
     }
+
     if (item.type === "INPUT") {
       icon = "add_circle";
       color = "bg-emerald-50 text-emerald-600";
+      // Input Aset Baru BISA DIKLIK
+      cursorClass = "cursor-pointer hover:bg-slate-50 active:scale-[0.98] transition-all";
+      clickAction = `onclick='openAssetDetailFromFeed(${JSON.stringify(item).replace(/'/g, "&#39;")})'`;
     }
 
     const itemDate = new Date(item.timestamp);
@@ -220,7 +234,14 @@ function renderFeedList(data) {
     const timeLabel = isToday ? itemDate.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "Kemarin";
 
     const div = document.createElement("div");
-    div.className = "bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex items-center gap-3 animate-fade-in";
+    // Tambahkan class cursor dan transition
+    div.className = `bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex items-center gap-3 animate-fade-in ${cursorClass}`;
+
+    // Tambahkan event onclick manual jika ada action
+    if (clickAction) {
+      div.onclick = () => openAssetDetail(item, item.status || "Normal");
+    }
+
     div.innerHTML = `
             <div class="${color} p-2.5 rounded-full h-10 w-10 flex items-center justify-center shadow-sm shrink-0">
                 <span class="material-icons-round text-lg">${icon}</span>
@@ -235,6 +256,7 @@ function renderFeedList(data) {
                     <span class="material-icons-round text-[10px]">person</span> ${item.petugas}
                 </p>
             </div>
+            ${item.type === "INPUT" || item.type === "LAPOR" ? '<span class="material-icons-round text-slate-300 text-sm">chevron_right</span>' : ""}
         `;
     container.appendChild(div);
   });
@@ -881,65 +903,160 @@ function downloadQRImage() {
 }
 
 // ================= JURNAL SYNC & TOOLS =================
+let isShowingAllJurnal = false; // Status apakah sedang menampilkan semua data atau cuma Today/Yesterday
+
 async function loadServerJurnal() {
   const container = document.getElementById("jurnalContainer");
-  container.innerHTML = `<div class="text-center py-4"><span class="material-icons-round animate-spin text-primary">sync</span></div>`;
+  // Tampilkan loading jika data kosong
+  if (jurnalLog.length === 0) {
+    container.innerHTML = `<div class="text-center py-4"><span class="material-icons-round animate-spin text-primary">sync</span></div>`;
+  }
+
   try {
     const res = await fetch(`${API_URL}?action=get_jurnal`);
     const data = await res.json();
-    jurnalLog = data; // Sync global var
+    jurnalLog = data; // Simpan ke global variable
+
+    isShowingAllJurnal = false; // Reset filter saat load baru
     renderJurnal();
   } catch (e) {
     console.log(e);
+    container.innerHTML = `<div class="text-center py-4 text-xs text-red-400">Gagal memuat data.</div>`;
   }
 }
 
 function renderJurnal() {
   const container = document.getElementById("jurnalContainer");
+  const searchVal = document.getElementById("jurnalSearchInput").value.toLowerCase();
+  const btnLoadMore = document.getElementById("btnLoadMoreJurnal");
+
   container.innerHTML = "";
 
   if (jurnalLog.length === 0) {
-    container.innerHTML = `<div class="text-center py-10 text-slate-400 text-xs">Belum ada jurnal hari ini.</div>`;
+    container.innerHTML = `<div class="text-center py-10 text-slate-400 text-xs">Belum ada jurnal.</div>`;
+    btnLoadMore.classList.add("hidden");
     return;
   }
 
-  jurnalLog.forEach((item) => {
-    // Cek apakah ada foto
-    let imgHtml = "";
-    if (item.foto && item.foto.includes("http")) {
-      // Tambahkan referrerpolicy agar Google Drive mau meload gambar
-      imgHtml = `<div class="mt-3 rounded-lg overflow-hidden border border-slate-100">
-                          <img src="${item.foto}" class="w-full h-40 object-cover bg-slate-50" loading="lazy" referrerpolicy="no-referrer" alt="Foto Kegiatan">
-                        </div>`;
-    }
-
-    const dateDisplay = item.date ? new Date(item.date).toLocaleDateString("id-ID", { weekday: "short", day: "numeric" }) : "";
-
-    const html = `
-        <div class="relative flex gap-4 animate-fade-in pb-6">
-            <div class="absolute left-[19px] top-8 bottom-0 w-0.5 bg-slate-200 -z-10"></div>
-            
-            <div class="flex-none w-10 h-10 rounded-full border-4 border-slate-50 bg-primary text-white shadow-sm flex items-center justify-center z-10">
-                <span class="material-icons-round text-sm">assignment</span>
-            </div>
-
-            <div class="flex-1 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                <div class="flex justify-between items-start mb-1">
-                     <span class="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded">${dateDisplay}</span>
-                     <span class="text-[9px] font-bold text-primary uppercase border border-primary/20 px-2 py-0.5 rounded-full">${item.petugas}</span>
-                </div>
-                <h4 class="font-bold text-slate-700 text-sm leading-tight">${item.judul}</h4>
-                <p class="text-[10px] text-slate-500 mb-2 flex items-center gap-1 mt-1">
-                    <span class="material-icons-round text-[10px]">place</span> ${item.lokasi}
-                </p>
-                <p class="text-xs text-slate-600 border-t border-dashed border-slate-200 pt-2 leading-relaxed">${item.desc}</p>
-                ${imgHtml}
-            </div>
-        </div>`;
-    container.innerHTML += html;
+  // 1. Filter Pencarian
+  let filteredData = jurnalLog.filter((item) => {
+    const text = (item.judul + " " + item.lokasi + " " + item.desc).toLowerCase();
+    return text.includes(searchVal);
   });
+
+  // 2. Filter Tanggal (Jika tidak sedang Search & Belum klik Load More)
+  let hasHiddenData = false;
+
+  if (!searchVal && !isShowingAllJurnal) {
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    // Reset jam agar perbandingan tanggal akurat
+    today.setHours(0, 0, 0, 0);
+    yesterday.setHours(0, 0, 0, 0);
+
+    const recentData = [];
+    const olderData = [];
+
+    filteredData.forEach((item) => {
+      const itemDate = new Date(item.date);
+      itemDate.setHours(0, 0, 0, 0);
+
+      if (itemDate >= yesterday) {
+        recentData.push(item);
+      } else {
+        olderData.push(item);
+      }
+    });
+
+    // Tampilkan hanya data terbaru
+    filteredData = recentData;
+
+    // Jika ada data lama yang disembunyikan, nyalakan tombol Load More
+    if (olderData.length > 0) hasHiddenData = true;
+  }
+
+  // 3. Render Data ke HTML
+  if (filteredData.length === 0) {
+    container.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs">Tidak ditemukan data yang cocok.</div>`;
+  } else {
+    filteredData.forEach((item) => {
+      // Logika Foto
+      let imgHtml = "";
+      if (item.foto && item.foto.includes("http")) {
+        imgHtml = `<div class="mt-3 rounded-lg overflow-hidden border border-slate-100">
+                              <img src="${item.foto}" class="w-full h-40 object-cover bg-slate-50" loading="lazy" referrerpolicy="no-referrer" alt="Foto Kegiatan">
+                            </div>`;
+      }
+
+      const dateObj = new Date(item.date);
+      const dateDisplay = dateObj.toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short" });
+      const isToday = new Date().toDateString() === dateObj.toDateString();
+      const dateBadgeColor = isToday ? "bg-green-100 text-green-600" : "bg-slate-100 text-slate-500";
+
+      const html = `
+            <div class="relative flex gap-4 animate-fade-in pb-6">
+                <div class="absolute left-[19px] top-8 bottom-0 w-0.5 bg-slate-200 -z-10"></div>
+                
+                <div class="flex-none w-10 h-10 rounded-full border-4 border-slate-50 bg-primary text-white shadow-sm flex items-center justify-center z-10">
+                    <span class="material-icons-round text-sm">assignment</span>
+                </div>
+
+                <div class="flex-1 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                    <div class="flex justify-between items-start mb-1">
+                         <span class="text-[10px] font-bold ${dateBadgeColor} px-2 py-0.5 rounded">${dateDisplay}</span>
+                         <span class="text-[9px] font-bold text-primary uppercase border border-primary/20 px-2 py-0.5 rounded-full">${item.petugas}</span>
+                    </div>
+                    <h4 class="font-bold text-slate-700 text-sm leading-tight">${item.judul}</h4>
+                    <p class="text-[10px] text-slate-500 mb-2 flex items-center gap-1 mt-1">
+                        <span class="material-icons-round text-[10px]">place</span> ${item.lokasi}
+                    </p>
+                    <p class="text-xs text-slate-600 border-t border-dashed border-slate-200 pt-2 leading-relaxed">${item.desc}</p>
+                    ${imgHtml}
+                </div>
+            </div>`;
+      container.innerHTML += html;
+    });
+  }
+
+  // Atur visibilitas tombol Load More
+  if (hasHiddenData && !searchVal) {
+    btnLoadMore.classList.remove("hidden");
+    btnLoadMore.innerHTML = `<button onclick="showOlderJurnal()" class="bg-white border border-slate-200 text-slate-500 px-4 py-2 rounded-full text-xs font-bold shadow-sm active:scale-95 hover:bg-slate-50">Muat Aktivitas Sebelumnya...</button>`;
+  } else {
+    btnLoadMore.classList.add("hidden");
+  }
 }
 
+function showOlderJurnal() {
+  isShowingAllJurnal = true; // Set flag untuk tampilkan semua
+  renderJurnal(); // Render ulang
+}
+// Event Listener Scroll
+window.onscroll = function () {
+  scrollFunction();
+};
+
+function scrollFunction() {
+  const btn = document.getElementById("btnBackToTop");
+  if (!btn) return;
+
+  // Muncul jika scroll lebih dari 300px
+  if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+    btn.classList.remove("hidden");
+    // Sedikit delay biar class 'hidden' hilang dulu baru animasi masuk
+    setTimeout(() => btn.classList.add("show"), 10);
+  } else {
+    btn.classList.remove("show");
+    // Tunggu animasi out selesai baru hide
+    setTimeout(() => btn.classList.add("hidden"), 300);
+  }
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
 async function submitJurnal() {
   const judul = document.getElementById("jurnal_judul").value;
   const lokasi = document.getElementById("jurnal_lokasi").value;
@@ -1000,21 +1117,58 @@ function switchHomeSub(view) {
 
 async function loadDashboardStats() {
   const container = document.getElementById("categoryListContainer");
-  container.innerHTML = '<div class="text-center py-4"><span class="material-icons-round animate-spin">sync</span></div>';
+
+  // 1. UI LOADING STATE (PENTING: Biar user gak kaget liat angka 0)
+  // Kita ganti angka dengan animasi titik-titik (...)
+  const loadingIndicator = '<span class="animate-pulse tracking-widest">...</span>';
+
+  document.getElementById("totalAssetStat").innerHTML = loadingIndicator;
+  document.getElementById("countNormal").innerHTML = loadingIndicator;
+  document.getElementById("countMaint").innerHTML = loadingIndicator;
+  document.getElementById("countRusak").innerHTML = loadingIndicator;
+
+  // Spinner di bagian list bawah
+  container.innerHTML = '<div class="text-center py-8 flex flex-col items-center opacity-50"><span class="material-icons-round animate-spin text-2xl text-primary mb-2">sync</span><span class="text-xs">Mengambil data...</span></div>';
 
   try {
     const res = await fetch(`${API_URL}?action=get_stats`);
     const data = await res.json();
     statsDataCache = data.details;
 
-    renderChart(data.counts);
-    document.getElementById("countNormal").innerText = data.counts.Normal;
-    document.getElementById("countMaint").innerText = data.counts.Maintenance;
-    document.getElementById("countRusak").innerText = data.counts.Rusak;
+    // Hitung Total untuk Persentase
+    const total = data.counts.Total || 1; // Hindari pembagian 0
 
+    // 2. UPDATE ANGKA & PERSENTASE (IMPROVEMENT)
+    // Helper kecil untuk hitung %
+    const getPct = (val) => Math.round((val / total) * 100) + "%";
+
+    // Render Chart
+    renderChart(data.counts);
+
+    // Update Text Angka
+    // Kita pakai innerHTML biar bisa styling ukuran font % nya lebih kecil
+    document.getElementById("countNormal").innerHTML = `
+            ${data.counts.Normal} 
+            <span class="text-[9px] opacity-60 font-normal block">${getPct(data.counts.Normal)}</span>
+        `;
+    document.getElementById("countMaint").innerHTML = `
+            ${data.counts.Maintenance}
+            <span class="text-[9px] opacity-60 font-normal block">${getPct(data.counts.Maintenance)}</span>
+        `;
+    document.getElementById("countRusak").innerHTML = `
+            ${data.counts.Rusak}
+            <span class="text-[9px] opacity-60 font-normal block">${getPct(data.counts.Rusak)}</span>
+        `;
+
+    // Default tampilkan list Normal
     renderCategoryList("Normal");
   } catch (e) {
     console.log(e);
+    container.innerHTML = `<div class="text-center py-4 text-xs text-red-400">Gagal memuat statistik. <br> Cek koneksi internet.</div>`;
+
+    // Kembalikan ke 0 atau tanda strip jika gagal
+    document.getElementById("totalAssetStat").innerText = "-";
+    document.getElementById("countNormal").innerText = "-";
   }
 }
 
@@ -1068,7 +1222,9 @@ function renderCategoryList(category) {
 }
 
 function renderChart(stats) {
+  // Animasi angka total naik (Optional Polish)
   document.getElementById("totalAssetStat").innerText = stats.Total;
+
   const ctx = document.getElementById("chartStatus").getContext("2d");
   if (window.myChart) window.myChart.destroy();
 
@@ -1081,10 +1237,19 @@ function renderChart(stats) {
           data: [stats.Normal, stats.Maintenance, stats.Rusak],
           backgroundColor: ["#10b981", "#f59e0b", "#ef4444"],
           borderWidth: 0,
+          hoverOffset: 10, // Efek saat hover lebih menonjol
         },
       ],
     },
-    options: { responsive: true, cutout: "75%", plugins: { legend: { display: false } } },
+    options: {
+      responsive: true,
+      cutout: "75%",
+      animation: {
+        animateScale: true,
+        animateRotate: true,
+      },
+      plugins: { legend: { display: false } },
+    },
   });
 }
 
@@ -1266,3 +1431,30 @@ function loadDetailImage() {
   };
 }
 
+// ================= INSTALL GUIDE LOGIC =================
+
+// Cek saat aplikasi pertama kali dimuat
+document.addEventListener("DOMContentLoaded", () => {
+  // Panggil pengecekan Full Screen
+  setTimeout(checkInstallation, 2000); // Delay 2 detik biar gak kaget pas baru buka
+});
+
+function checkInstallation() {
+  // Cek apakah sudah Full Screen (Standalone Mode)
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+
+  // Cek apakah user pernah menutup permanen
+  const hasSeenGuide = localStorage.getItem("bms_install_guide_seen");
+
+  // Jika BUKAN standalone DAN Belum pernah ditutup permanen -> Tampilkan Modal
+  if (!isStandalone && !hasSeenGuide) {
+    openModal("modalInstall");
+  }
+}
+
+function closeInstallGuide(permanent = false) {
+  closeModal("modalInstall");
+  if (permanent) {
+    localStorage.setItem("bms_install_guide_seen", "true");
+  }
+}
