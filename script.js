@@ -476,28 +476,29 @@ function renderSearchResults(data) {
 // ================= FORM LAPORAN =================
 function openForm(item) {
   console.log("Membuka form untuk:", item);
+
+  // Simpan ke riwayat
+  saveToRecentScans(item);
+
   currentAsset = item;
-
-  // 1. WAJIB: Pindah ke Tab Patrol dulu agar form terlihat
-  // (Ini solusi masalah "tidak ada tindakan")
   switchTab("patrol");
-
-  // 2. Reset Form UI
   resetFormUI();
 
-  // 3. Tampilkan View Form, Sembunyikan List
+  // === PERBAIKAN DI SINI ===
+  // Kita sembunyikan semua elemen list (Search Result & Recent)
   const listView = document.getElementById("patrol-list-view");
+  const recentView = document.getElementById("recentScanContainer"); // ID Container Riwayat
   const formView = document.getElementById("patrol-form-view");
 
   if (listView) listView.classList.add("hidden");
+  if (recentView) recentView.classList.add("hidden"); // Sembunyikan Riwayat
   if (formView) formView.classList.remove("hidden");
 
-  // 4. Isi Data Aset ke Element HTML
+  // Isi Data Form
   document.getElementById("formAssetName").innerText = item.name || "Nama Tidak Ada";
   document.getElementById("formAssetLoc").innerText = item.location || "-";
   document.getElementById("formAssetId").innerText = item.id || "-";
 
-  // 5. Load History
   loadAssetHistory(item.name);
 }
 
@@ -515,8 +516,16 @@ function resetFormUI() {
 }
 
 function closeForm() {
-  document.getElementById("patrol-form-view").classList.add("hidden");
-  document.getElementById("patrol-list-view").classList.remove("hidden");
+  const listView = document.getElementById("patrol-list-view");
+  const recentView = document.getElementById("recentScanContainer");
+  const formView = document.getElementById("patrol-form-view");
+
+  // Sembunyikan form
+  if (formView) formView.classList.add("hidden");
+
+  // Munculkan kembali list & riwayat
+  if (listView) listView.classList.remove("hidden");
+  if (recentView) recentView.classList.remove("hidden"); // Munculkan Riwayat Lagi
 }
 
 function setStatus(val, btn) {
@@ -1172,11 +1181,21 @@ async function loadDashboardStats() {
   }
 }
 
+let currentStatCategory = "Normal"; // Default Kategori
+
 function renderCategoryList(category) {
-  // 1. Atur Tampilan Tombol Tab Aktif
+  // 1. Update State Global
+  currentStatCategory = category;
+
+  // 2. Reset Input Search setiap ganti tab (biar user ga bingung)
+  const searchInput = document.getElementById("statSearchInput");
+  if (searchInput) searchInput.value = "";
+
+  // 3. Atur Tampilan Tombol Tab Aktif (Visual)
   document.querySelectorAll(".stat-tab").forEach((el) => {
     el.className = "stat-tab py-2 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center transition-all opacity-60 scale-95";
   });
+
   let btnId = "btnCatNormal";
   if (category === "Maintenance") btnId = "btnCatMaint";
   if (category === "Rusak") btnId = "btnCatRusak";
@@ -1186,41 +1205,55 @@ function renderCategoryList(category) {
     activeBtn.className = "stat-tab active py-2 rounded-xl border-2 border-primary/20 bg-primary/5 shadow-md flex flex-col items-center justify-center transition-all scale-100";
   }
 
-  // 2. Render List Item
+  // 4. Panggil Fungsi Render Utama
+  filterStatList();
+}
+
+function filterStatList() {
   const container = document.getElementById("categoryListContainer");
+  const searchVal = document.getElementById("statSearchInput").value.toLowerCase();
+
   container.innerHTML = "";
 
-  // Ambil data dari cache (hasil fetch get_stats)
-  const list = statsDataCache ? statsDataCache[category] || [] : [];
+  // Ambil data dari cache berdasarkan kategori yg aktif
+  const list = statsDataCache ? statsDataCache[currentStatCategory] || [] : [];
 
-  if (list.length === 0) {
-    container.innerHTML = `<div class="text-center text-xs text-slate-400 py-4 border border-dashed border-slate-200 rounded-xl">Tidak ada aset ${category}.</div>`;
+  // Filter berdasarkan Search Input
+  const filtered = list.filter((item) => {
+    const text = (item.name + " " + item.id + " " + item.location).toLowerCase();
+    return text.includes(searchVal);
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="text-center text-xs text-slate-400 py-6 border border-dashed border-slate-200 rounded-xl">
+            Tidak ditemukan data '${currentStatCategory}'<br>
+            <span class="text-[10px] opacity-70">Coba kata kunci lain</span>
+        </div>`;
     return;
   }
 
-  list.forEach((item) => {
+  // Render List Item
+  filtered.forEach((item) => {
     let borderClass = "border-emerald-400";
-    if (category === "Maintenance") borderClass = "border-amber-400";
-    if (category === "Rusak") borderClass = "border-red-500";
+    if (currentStatCategory === "Maintenance") borderClass = "border-amber-400";
+    if (currentStatCategory === "Rusak") borderClass = "border-red-500";
 
     const div = document.createElement("div");
-    div.className = `bg-white p-3 rounded-xl border-l-4 ${borderClass} shadow-sm mb-2 active:scale-[0.98] transition-transform cursor-pointer flex justify-between items-center`;
+    div.className = `bg-white p-3 rounded-xl border-l-4 ${borderClass} shadow-sm mb-2 active:scale-[0.98] transition-transform cursor-pointer flex justify-between items-center animate-fade-in`;
 
-    // --- TAMBAHAN PENTING: ONCLICK ---
-    // Saat diklik, panggil fungsi buka detail
-    div.onclick = () => openAssetDetail(item, category);
+    // Onclick buka detail
+    div.onclick = () => openAssetDetail(item, currentStatCategory);
 
     div.innerHTML = `
-            <div>
-                <h4 class="text-xs font-bold text-slate-700">${item.name}</h4>
-                <p class="text-[9px] font-mono text-slate-400">${item.id} • ${item.location}</p>
+            <div class="overflow-hidden">
+                <h4 class="text-xs font-bold text-slate-700 truncate">${item.name}</h4>
+                <p class="text-[9px] font-mono text-slate-400 truncate">${item.id} • ${item.location}</p>
             </div>
-            <span class="material-icons-round text-slate-300 text-sm">chevron_right</span>
+            <span class="material-icons-round text-slate-300 text-sm shrink-0 ml-2">chevron_right</span>
         `;
     container.appendChild(div);
   });
 }
-
 function renderChart(stats) {
   // Animasi angka total naik (Optional Polish)
   document.getElementById("totalAssetStat").innerText = stats.Total;
@@ -1456,5 +1489,102 @@ function closeInstallGuide(permanent = false) {
   closeModal("modalInstall");
   if (permanent) {
     localStorage.setItem("bms_install_guide_seen", "true");
+  }
+}
+
+// ================= RECENT SCAN LOGIC (RIWAYAT) =================
+
+// 1. Panggil fungsi ini SETIAP KALI aplikasi dibuka
+document.addEventListener("DOMContentLoaded", () => {
+  // ... (kode init lain) ...
+  renderRecentScans();
+});
+
+// 2. Fungsi Menyimpan Riwayat (Maksimal 5)
+function saveToRecentScans(asset) {
+  // Ambil data lama
+  let recent = JSON.parse(localStorage.getItem("bms_recent_scans") || "[]");
+
+  // Hapus duplikat (jika aset yg sama discan lagi, kita pindah ke paling atas)
+  recent = recent.filter((item) => item.id !== asset.id);
+
+  // Tambah data baru ke paling depan (unshift)
+  recent.unshift({
+    id: asset.id,
+    name: asset.name,
+    location: asset.location,
+    timestamp: new Date().getTime(),
+    // Simpan data default biar bisa dibuka di detail
+    status: asset.status || "Normal",
+    note: asset.note || "-",
+  });
+
+  // Batasi cuma simpan 5 terakhir
+  if (recent.length > 5) recent.pop();
+
+  // Simpan ke memori HP
+  localStorage.setItem("bms_recent_scans", JSON.stringify(recent));
+
+  // Update tampilan
+  renderRecentScans();
+}
+
+// 3. Fungsi Menampilkan List
+// GANTI FUNGSI INI DI SCRIPT.JS
+
+function renderRecentScans() {
+  const container = document.getElementById("recentList");
+  // Ambil data dari memori HP (Local Storage)
+  const recent = JSON.parse(localStorage.getItem("bms_recent_scans") || "[]");
+
+  if (recent.length === 0) {
+    // Tampilan jika kosong
+    container.innerHTML = `
+        <div class="text-center py-8 border-2 border-dashed border-slate-100 rounded-2xl opacity-60">
+            <span class="material-icons-round text-slate-300 text-3xl mb-1">qr_code_scanner</span>
+            <p class="text-[10px] text-slate-400">Belum ada riwayat scan hari ini.</p>
+        </div>`;
+    return;
+  }
+
+  container.innerHTML = "";
+  recent.forEach((item) => {
+    // Hitung waktu (opsional)
+    const diffMs = new Date().getTime() - item.timestamp;
+    const mins = Math.floor(diffMs / 60000);
+    let timeText = mins < 1 ? "Baru saja" : `${mins}m lalu`;
+    if (mins > 60) timeText = "Hari ini";
+
+    const div = document.createElement("div");
+    div.className = "bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex justify-between items-center active:scale-[0.98] transition-transform cursor-pointer hover:border-primary/30 group";
+
+    // === PERUBAHAN UTAMA DI SINI ===
+    // Saat diklik, langsung buka "openForm" (Halaman Laporan)
+    // Data diambil langsung dari 'item' (memori HP), TIDAK LOADING SERVER.
+    div.onclick = () => openForm(item);
+    // ===============================
+
+    div.innerHTML = `
+            <div class="flex items-center gap-3 overflow-hidden">
+                <div class="bg-slate-50 text-slate-400 h-8 w-8 rounded-full flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+                    <span class="material-icons-round text-sm">history</span>
+                </div>
+                <div class="min-w-0">
+                    <h4 class="text-xs font-bold text-slate-700 truncate">${item.name}</h4>
+                    <p class="text-[9px] text-slate-400 font-mono truncate">${item.id} • ${item.location}</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <span class="material-icons-round text-slate-300 text-lg">edit_note</span>
+            </div>
+        `;
+    container.appendChild(div);
+  });
+}
+
+function clearRecentScans() {
+  if (confirm("Hapus semua riwayat scan?")) {
+    localStorage.removeItem("bms_recent_scans");
+    renderRecentScans();
   }
 }
