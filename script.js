@@ -623,7 +623,22 @@ function closeSuccessModal() {
   loadGlobalFeed(); // Refresh feed
 }
 
-// ================= QR CODE GENERATOR (CENTERED & LABEL) =================
+// ================= QR CODE GENERATOR (MANUAL LOGO DRAWING & CUSTOM LAYOUT) =================
+
+// Helper untuk memuat gambar logo secara manual (PASTI MUNCUL)
+function loadLogoImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "Anonymous"; // Mencegah error tainted canvas
+    img.onload = () => resolve(img);
+    img.onerror = () => {
+      console.warn("Logo gagal dimuat, lanjut tanpa logo.");
+      resolve(null); // Jangan error, lanjut aja tanpa logo
+    };
+    img.src = src;
+  });
+}
+
 function toggleLabelInputs() {
   const isLabelMode = document.getElementById("toggleLabelMode").checked;
   const extraInputs = document.getElementById("extraLabelInputs");
@@ -652,108 +667,204 @@ async function generateQR() {
     return;
   }
 
+  // UI Loading
   canvasContainer.innerHTML = '<span class="material-icons-round animate-spin text-slate-300">sync</span>';
   resultArea.classList.remove("hidden");
   tempContainer.innerHTML = "";
 
-  const qrSize = isLabelMode ? 200 : 300;
+  // 1. GENERATE QR CODE MENTAH (TANPA LOGO DULU)
+  // Kita gambar logo secara manual nanti agar tidak gagal load
+  const qrSize = isLabelMode ? 220 : 300;
+
   const options = {
     text: id,
     width: qrSize,
     height: qrSize,
     colorDark: "#000000",
     colorLight: "#ffffff",
-    correctLevel: QRCode.CorrectLevel.H,
-    logo: "Berlian-Manyar-Sejahtera-New-Thumbnail.jpg", // FILE LOGO WAJIB ADA
-    logoWidth: 50,
-    logoHeight: 50,
-    logoBackgroundColor: "#ffffff",
-    logoBackgroundTransparent: false,
+    correctLevel: QRCode.CorrectLevel.H, // Level Tinggi (30%) agar logo di tengah aman
     quietZone: 5,
     quietZoneColor: "#ffffff",
   };
 
   try {
+    // Render QR Base
     new QRCode(tempContainer, options);
-    await new Promise((r) => setTimeout(r, 600)); // Tunggu render
+
+    // Load Gambar Logo Secara Manual (Parallel)
+    const logoPromise = loadLogoImage("Berlian-Manyar-Sejahtera-New-Thumbnail.jpg");
+
+    // Tunggu QR selesai render
+    await new Promise((r) => setTimeout(r, 500));
 
     const qrCanvasMentah = tempContainer.querySelector("canvas");
     if (!qrCanvasMentah) throw new Error("Gagal render QR Base");
 
+    // Tunggu Logo Selesai Download
+    const logoImg = await logoPromise;
+
+    // 2. SIAPKAN CANVAS FINAL
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
 
     if (isLabelMode) {
-      // -- MODE LABEL STIKER --
-      const labelWidth = 600;
-      const labelHeight = 350;
+      // === MODE LABEL STIKER (LAYOUT CUSTOM HITAM/PUTIH) ===
+      const labelWidth = 800;
+      const labelHeight = 320;
       canvas.width = labelWidth;
       canvas.height = labelHeight;
 
-      // Background & Decor
+      // Data Input
+      const nama = document.getElementById("gen_label_nama").value || "-";
+      let tglRaw = document.getElementById("gen_label_tgl").value;
+      let tglStr = "-";
+      if (tglRaw) {
+        const d = new Date(tglRaw);
+        tglStr = `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}/${d.getFullYear()}`;
+      }
+      const divisi = document.getElementById("gen_label_divisi").value || "-";
+
+      // A. Background Dasar Putih
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, labelWidth, labelHeight);
-      ctx.fillStyle = "#2596be";
-      ctx.fillRect(0, 0, 15, labelHeight); // Blue Strip
 
-      // Text Data
-      const nama = document.getElementById("gen_label_nama").value || "ASSET ITEM";
-      const lokasi = document.getElementById("gen_label_divisi").value || "-";
-      const tgl = document.getElementById("gen_label_tgl").value || "-";
+      // B. Header Bar (Putih)
+      const headerHeight = 70;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, labelWidth, headerHeight);
 
+      // Text Header
       ctx.fillStyle = "#000000";
-      ctx.font = "bold 18px Arial";
-      ctx.fillText("PT BERLIAN MANYAR SEJAHTERA", 35, 40);
+      ctx.font = "bold 28px Arial, sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText("PT Berlian Manyar Sejahtera", 25, headerHeight / 2);
 
+      // Garis Pembatas Header
       ctx.beginPath();
-      ctx.moveTo(35, 55);
-      ctx.lineTo(labelWidth - 20, 55);
-      ctx.strokeStyle = "#cbd5e1";
-      ctx.lineWidth = 2;
+      ctx.moveTo(0, headerHeight);
+      ctx.lineTo(labelWidth, headerHeight);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#000000";
       ctx.stroke();
 
-      ctx.font = "bold 36px Arial";
-      ctx.fillText(id, 35, 110);
-      ctx.font = "20px Arial";
-      ctx.fillStyle = "#475569";
-      ctx.fillText(nama, 35, 150);
-      ctx.font = "14px Arial";
-      ctx.fillStyle = "#94a3b8";
-      ctx.fillText(`Lokasi: ${lokasi}`, 35, 180);
-      ctx.fillText(`Tgl: ${tgl}`, 35, 200);
+      // C. Area Data (Kiri: Blok Hitam, Kanan: Putih)
+      const contentStartY = headerHeight;
+      const contentHeight = labelHeight - headerHeight;
+      const leftColWidth = 220; // Lebar blok hitam
 
-      // Draw QR on Right Center
-      const qrX = labelWidth - qrSize - 20;
-      const qrY = (labelHeight - qrSize) / 2 + 10;
-      ctx.drawImage(qrCanvasMentah, qrX, qrY, qrSize, qrSize);
+      // Blok Hitam di Kiri
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, contentStartY, leftColWidth, contentHeight);
 
+      // D. Frame Luar
       ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(0, 0, labelWidth, labelHeight); // Border
+      ctx.lineWidth = 4;
+      ctx.strokeRect(2, 2, labelWidth - 4, labelHeight - 4);
+
+      // E. Menggambar Baris Data
+      const labels = ["Nama aset", "Nomor aset", "Tanggal", "Divisi"];
+      const values = [nama, id, tglStr, divisi];
+
+      const startY = contentStartY + 45;
+      const rowGap = 55;
+
+      labels.forEach((lbl, i) => {
+        const currentY = startY + i * rowGap;
+
+        // Label (Di area Hitam -> Putih)
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 20px Arial, sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(lbl, 25, currentY);
+
+        // Value (Di area Putih -> Hitam)
+        ctx.fillStyle = "#000000";
+        if (lbl === "Nomor aset") {
+          ctx.font = "bold 26px monospace";
+        } else {
+          ctx.font = "bold 22px Arial, sans-serif";
+        }
+        ctx.fillText(values[i], leftColWidth + 25, currentY);
+
+        // Garis Pemisah (Kecuali baris terakhir)
+        if (i < labels.length - 1) {
+          const lineY = currentY + 15;
+          // Garis Putih di blok Hitam
+          ctx.beginPath();
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 1;
+          ctx.moveTo(0, lineY);
+          ctx.lineTo(leftColWidth, lineY);
+          ctx.stroke();
+
+          // Garis Hitam di blok Putih (Stop sebelum QR)
+          ctx.beginPath();
+          ctx.strokeStyle = "#000000";
+          ctx.moveTo(leftColWidth, lineY);
+          ctx.lineTo(labelWidth - 290, lineY);
+          ctx.stroke();
+        }
+      });
+
+      // F. Tempel QR Code (Kanan)
+      const qrAreaX = labelWidth - 280;
+      const qrFinalX = qrAreaX + (280 - qrSize) / 2;
+      const qrFinalY = contentStartY + (contentHeight - qrSize) / 2;
+
+      ctx.drawImage(qrCanvasMentah, qrFinalX, qrFinalY, qrSize, qrSize);
+
+      // G. GAMBAR LOGO MANUAL DI TENGAH QR (PASTI MUNCUL)
+      if (logoImg) {
+        const logoSize = qrSize * 0.22; // 22% dari ukuran QR
+        const logoX = qrFinalX + (qrSize - logoSize) / 2;
+        const logoY = qrFinalY + (qrSize - logoSize) / 2;
+
+        // Kotak Putih di belakang logo (biar bersih)
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(logoX - 2, logoY - 2, logoSize + 4, logoSize + 4);
+
+        // Gambar Logo
+        ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+      }
     } else {
-      // -- MODE ONLY QR (CENTERED) --
-      const padding = 20;
+      // === MODE HANYA QR (CENTERED) ===
+      const padding = 25;
       canvas.width = qrSize + padding * 2;
-      canvas.height = qrSize + padding * 2 + 40;
+      canvas.height = qrSize + padding * 2 + 50;
 
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+
       ctx.drawImage(qrCanvasMentah, padding, padding);
 
+      // Gambar Logo Manual
+      if (logoImg) {
+        const logoSize = qrSize * 0.22;
+        const logoX = padding + (qrSize - logoSize) / 2;
+        const logoY = padding + (qrSize - logoSize) / 2;
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(logoX - 3, logoY - 3, logoSize + 6, logoSize + 6);
+        ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+      }
+
       ctx.fillStyle = "#000000";
-      ctx.font = "bold 20px Courier New";
+      ctx.font = "bold 24px Courier New";
       ctx.textAlign = "center";
-      ctx.fillText(id, canvas.width / 2, canvas.height - 15);
+      ctx.fillText(id, canvas.width / 2, canvas.height - 20);
     }
 
+    // OUTPUT
     canvasContainer.innerHTML = "";
     canvas.id = "finalLabelCanvas";
     canvas.style.width = "100%";
     canvas.style.height = "auto";
-    canvas.className = "shadow-sm rounded border border-slate-200";
+    canvas.className = "shadow-lg rounded-lg border border-slate-300";
     canvasContainer.appendChild(canvas);
   } catch (e) {
-    alert("Error: " + e.message);
+    console.error(e);
+    canvasContainer.innerHTML = `<p class="text-xs text-red-500 text-center py-4">Gagal generate: ${e.message}</p>`;
   }
 }
 
