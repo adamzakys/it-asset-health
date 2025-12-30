@@ -1128,24 +1128,52 @@ async function submitNewAsset() {
   const date = document.getElementById("new_date").value;
 
   if (!id || !name) {
-    alert("ID & Nama wajib!");
+    alert("ID & Nama wajib diisi!");
     return;
   }
 
-  document.getElementById("loadingText").innerText = "INPUT DATA...";
+  // Tampilkan Loading
+  document.getElementById("loadingText").innerText = "MENYIMPAN DATA...";
   openModal("modalLoading");
 
   try {
+    // 1. Kirim Data ke Google Sheet
     const payload = { type: "new_asset", id, name, location: loc, date };
     await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
-    alert("Aset Berhasil Ditambahkan!");
+
+    // 2. Tutup Loading & Modal Tambah Aset
+    closeModal("modalLoading");
     closeModal("modalAddAsset");
+
+    // 3. --- ALUR BARU: AUTO-GENERATE LABEL ---
+    // Pindahkan data yang barusan diketik ke form QR Generator
+    document.getElementById("gen_qr_id").value = id;
+    document.getElementById("gen_label_nama").value = name;
+    document.getElementById("gen_label_divisi").value = loc;
+    document.getElementById("gen_label_tgl").value = date;
+
+    // Paksa Mode "Label Lengkap" (Toggle ON)
+    const toggle = document.getElementById("toggleLabelMode");
+    if (!toggle.checked) {
+      toggle.checked = true;
+      toggleLabelInputs(); // Panggil fungsi ini agar form input label muncul
+    }
+
+    // Buka Modal Generator
+    openModal("modalQRGenerator");
+
+    // Jalankan Generate Otomatis (Kasih jeda dikit biar modal render dulu)
+    setTimeout(() => {
+      generateQR(); // Fungsi sakti yang tadi kita buat
+    }, 300);
+
+    // 4. Bersihkan Form Tambah Aset (Reset)
     document.getElementById("new_id").value = "";
     document.getElementById("new_name").value = "";
+    document.getElementById("new_loc").value = "";
   } catch (e) {
-    alert("Error: " + e.message);
-  } finally {
     closeModal("modalLoading");
+    alert("Gagal menyimpan: " + e.message);
   }
 }
 
@@ -1237,3 +1265,4 @@ function loadDetailImage() {
     btn.className = "w-full bg-red-50 text-red-500 py-3 rounded-xl font-bold text-xs";
   };
 }
+
