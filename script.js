@@ -94,8 +94,11 @@ function closeModal(id) {
   if (el) {
     el.classList.add("hidden");
     el.classList.remove("flex");
-    // Jika scanner ditutup, pastikan kamera mati
-    if (id === "modalScanner") stopScanner();
+
+    // Jika yang ditutup adalah Modal Scanner, WAJIB matikan kamera
+    if (id === "modalScanner") {
+      stopScanner();
+    }
   }
 }
 
@@ -363,15 +366,31 @@ function processScanResult(decodedText) {
   }, 500);
 }
 
-function stopScanner() {
+async function stopScanner() {
   if (html5QrcodeScanner) {
-    html5QrcodeScanner
-      .stop()
-      .then(() => {
-        html5QrcodeScanner.clear();
-      })
-      .catch((err) => console.log("Stop failed", err));
+    try {
+      // Coba hentikan kamera secara software
+      await html5QrcodeScanner.stop();
+      console.log("Kamera dimatikan.");
+    } catch (err) {
+      console.warn("Gagal stop kamera (mungkin belum start atau sudah mati):", err);
+    }
+
+    try {
+      // Bersihkan area layar (hapus elemen video hitam)
+      html5QrcodeScanner.clear();
+    } catch (e) {
+      console.warn("Gagal clear UI:", e);
+    }
   }
+
+  // Hapus instance agar saat dibuka lagi mulai dari 0
+  html5QrcodeScanner = null;
+  isScanningProcess = false;
+
+  // Pastikan div reader kosong bersih
+  const reader = document.getElementById("reader");
+  if (reader) reader.innerHTML = "";
 }
 
 // ================= SEARCH & PATROL =================
@@ -1530,15 +1549,12 @@ function saveToRecentScans(asset) {
 }
 
 // 3. Fungsi Menampilkan List
-// GANTI FUNGSI INI DI SCRIPT.JS
-
 function renderRecentScans() {
   const container = document.getElementById("recentList");
   // Ambil data dari memori HP (Local Storage)
   const recent = JSON.parse(localStorage.getItem("bms_recent_scans") || "[]");
 
   if (recent.length === 0) {
-    // Tampilan jika kosong
     container.innerHTML = `
         <div class="text-center py-8 border-2 border-dashed border-slate-100 rounded-2xl opacity-60">
             <span class="material-icons-round text-slate-300 text-3xl mb-1">qr_code_scanner</span>
