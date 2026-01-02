@@ -739,73 +739,54 @@ function scanFromFile(input) {
   }
 }
 
-// ================= SHARE WA LOGIC (FIXED) =================
 // ================= FITUR SHARE UMUM (SYSTEM SHARE) =================
+// ================= SHARE NATIVE (MURNI) =================
 
 async function executeShareWA() {
-  // Cek apakah ada data yang mau dishare
   if (!tempShareData) return;
 
-  let title = "Laporan BMS Asset";
-  let text = "";
-  let filesArray = [];
-
-  // 1. Buat Caption (Teks)
+  // 1. Susun Caption
   const timeStr = new Date().toLocaleString("id-ID");
+  let caption = "";
 
   if (tempShareData.type === "laporan") {
     const { nama, id, loc, status, catatan } = tempShareData;
-    text = `*LAPORAN IT OPERASIONAL*\nPT Berlian Manyar Sejahtera\n\n` + `ASET     : ${nama}\n` + `ID       : ${id}\n` + `LOKASI   : ${loc}\n` + `STATUS   : ${status}\n` + `CATATAN  : ${catatan || "-"}\n` + `WAKTU    : ${timeStr}`;
+    caption = `*LAPORAN IT OPERASIONAL*\nPT BMS\n\n` + `ASET    : ${nama}\n` + `LOKASI  : ${loc}\n` + `STATUS  : ${status}\n` + `NOTE    : ${catatan || "-"}\n` + `WAKTU   : ${timeStr}`;
   } else if (tempShareData.type === "jurnal") {
     const { judul, lokasi, desc } = tempShareData;
-    text = `*JURNAL HARIAN IT*\nPT Berlian Manyar Sejahtera\n\n` + `KEGIATAN : ${judul}\n` + `LOKASI   : ${lokasi}\n` + `DETAIL   : ${desc}\n` + `WAKTU    : ${timeStr}`;
+    caption = `*JURNAL HARIAN IT*\nPT BMS\n\n` + `KEGIATAN : ${judul}\n` + `LOKASI   : ${lokasi}\n` + `DETAIL   : ${desc}\n` + `WAKTU    : ${timeStr}`;
   }
 
-  // 2. Proses Gambar (CRITICAL STEP)
-  // Kita harus "membungkus ulang" file gambar agar diterima oleh System Share
+  // 2. Siapkan File Gambar
+  let shareData = {
+    title: "Laporan BMS", // Beberapa HP pakai ini sebagai subjek/caption cadangan
+    text: caption, // Ini caption utamanya
+  };
+
   if (tempShareData.img1) {
     try {
-      const originalFile = tempShareData.img1;
-
-      // Paksa nama file jadi .jpg agar dideteksi sebagai gambar
+      // Kita buat file .jpg fresh dari blob yang ada
       const fileName = `Laporan_${Date.now()}.jpg`;
+      const file = new File([tempShareData.img1], fileName, { type: "image/jpeg" });
 
-      // Buat file baru dari data yang ada
-      const file = new File([originalFile], fileName, { type: "image/jpeg" });
-
-      filesArray = [file];
+      // Masukkan ke data share
+      shareData.files = [file];
     } catch (e) {
-      console.warn("Gagal memproses gambar:", e);
+      console.warn("Gagal proses file:", e);
     }
   }
 
-  // 3. Panggil Menu Share Bawaan HP (Navigator Share)
+  // 3. Eksekusi Share
   if (navigator.share) {
     try {
-      // Coba kirim TEKS + GAMBAR
-      await navigator.share({
-        title: title,
-        text: text,
-        files: filesArray,
-      });
-      console.log("Berhasil share gambar & teks");
+      // Kita tidak pakai 'url', karena sering bikin bentrok dengan 'files' di WA
+      await navigator.share(shareData);
+      console.log("Share berhasil dibuka");
     } catch (err) {
-      console.warn("Gagal share dengan gambar, mencoba teks saja...", err);
-
-      // JIKA GAGAL (Misal gambar tidak support), KIRIM TEKS SAJA
-      // Ini fallback otomatis biar user setidaknya bisa kirim laporan
-      try {
-        await navigator.share({
-          title: title,
-          text: text,
-        });
-      } catch (err2) {
-        // User menutup menu share (Cancel), biarkan saja.
-      }
+      console.warn("User membatalkan atau error:", err);
     }
   } else {
-    // Jika HP sangat jadul atau Browser tidak support fitur Share
-    alert("Browser ini tidak mendukung fitur Share System.");
+    alert("Browser tidak support fitur share.");
   }
 }
 
