@@ -739,70 +739,69 @@ function scanFromFile(input) {
   }
 }
 
-// ================= FITUR SHARE UMUM (SYSTEM SHARE) =================
-// ================= SHARE VIA WEB SHARE API (METODE GOOGLE) =================
+// ================= SHARE WA FINAL (METODE AUTO-COPY) =================
 
 async function executeShareWA() {
-  // Cek apakah ada data
   if (!tempShareData) return;
 
-  // 1. SIAPKAN CAPTION (TEKS)
+  // 1. Susun Teks Laporan (Rapi & Formal)
   const timeStr = new Date().toLocaleString("id-ID");
-  let textPesan = "";
+  let caption = "";
 
   if (tempShareData.type === "laporan") {
     const { nama, id, loc, status, catatan } = tempShareData;
-    textPesan = `*LAPORAN IT OPERASIONAL*\n\n` + `ASET    : ${nama}\n` + `LOKASI  : ${loc}\n` + `STATUS  : ${status}\n` + `NOTE    : ${catatan || "-"}\n` + `WAKTU   : ${timeStr}`;
-  } else {
+    caption =
+      `*LAPORAN IT OPERASIONAL*\nPT Berlian Manyar Sejahtera\n\n` +
+      `ASET     : ${nama}\n` +
+      `ID ASET  : ${id}\n` +
+      `LOKASI   : ${loc}\n` +
+      `STATUS   : ${status.toUpperCase()}\n` +
+      `CATATAN  : ${catatan || "-"}\n` +
+      `PETUGAS  : ${currentUser}\n` +
+      `WAKTU    : ${timeStr}`;
+  } else if (tempShareData.type === "jurnal") {
     const { judul, lokasi, desc } = tempShareData;
-    textPesan = `*JURNAL HARIAN IT*\n\n` + `KEGIATAN : ${judul}\n` + `LOKASI   : ${lokasi}\n` + `DETAIL   : ${desc}\n` + `WAKTU    : ${timeStr}`;
+    caption = `*JURNAL HARIAN IT*\nPT Berlian Manyar Sejahtera\n\n` + `KEGIATAN : ${judul}\n` + `LOKASI   : ${lokasi}\n` + `DETAIL   : ${desc}\n` + `PETUGAS  : ${currentUser}\n` + `WAKTU    : ${timeStr}`;
   }
 
-  // 2. SIAPKAN FILE GAMBAR (PERSIS CARA GOOGLE)
+  // 2. Siapkan File Gambar
   let filesArray = [];
-
   if (tempShareData.img1) {
     try {
-      // Kita ambil blob (data mentah) dari file yang diupload
       const originalFile = tempShareData.img1;
-
-      // Buat File baru yang bersih (mirip langkah 'new File' di contoh Google)
-      // Kita paksa namanya jadi .jpg agar dikenali WA
-      const cleanFile = new File([originalFile], "laporan_bms.jpg", {
-        type: originalFile.type || "image/jpeg",
-      });
-
-      filesArray = [cleanFile];
+      // Buat file .jpg baru agar diterima WA
+      const fileName = `Laporan_BMS_${Date.now()}.jpg`;
+      const file = new File([originalFile], fileName, { type: "image/jpeg" });
+      filesArray = [file];
     } catch (e) {
-      console.error("Gagal proses gambar:", e);
+      console.warn("Gagal memproses gambar:", e);
     }
   }
 
-  // 3. EKSEKUSI SHARE (DENGAN PENGECEKAN)
-  // Kita cek dulu apakah browser mendukung share file ini
-  if (navigator.canShare && navigator.canShare({ files: filesArray })) {
+  // 3. COPY TEKS KE CLIPBOARD
+  try {
+    await navigator.clipboard.writeText(caption);
+    // Beri tahu user
+    alert("✅ Teks Laporan BERHASIL DISALIN!\n\nLangkah selanjutnya:\n1. Pilih WhatsApp.\n2. Tekan lama di kolom caption.\n3. Pilih 'Tempel' (Paste).");
+  } catch (err) {
+    console.warn("Gagal auto-copy, user harus ketik manual:", err);
+    alert("Gagal menyalin teks otomatis. Mohon ketik manual.");
+  }
+
+  // 4. BUKA MENU SHARE (KIRIM GAMBAR)
+  if (navigator.share) {
     try {
+      // Kita HANYA kirim files. Teksnya sudah di clipboard.
+      // Jangan kirim 'text' di sini biar WA fokus terima gambarnya saja.
       await navigator.share({
-        files: filesArray, // Gambarnya
-        title: "Laporan BMS", // Judul
-        text: textPesan, // Teks Caption
-      });
-      console.log("Berhasil berbagi!");
-    } catch (error) {
-      console.log("Gagal berbagi atau dibatalkan:", error);
-    }
-  } else {
-    // Jika HP menolak gambar (misal format tidak didukung), kita kirim Teks saja
-    // Ini fallback biar setidaknya laporan terkirim
-    try {
-      await navigator.share({
-        title: "Laporan BMS",
-        text: textPesan,
+        files: filesArray,
       });
     } catch (err) {
-      // Fallback terakhir: WA Link
-      window.open(`https://wa.me/?text=${encodeURIComponent(textPesan)}`, "_blank");
+      console.log("Share dibatalkan user");
     }
+  } else {
+    // Fallback untuk HP lama/Desktop
+    window.open(`https://wa.me/?text=${encodeURIComponent(caption)}`, "_blank");
   }
 }
 
