@@ -199,10 +199,16 @@
           <div class="bg-primary p-4 flex justify-between items-start text-white">
             <div>
               <h3 class="font-bold text-lg leading-tight" id="formAssetName">Nama Perangkat</h3>
-              <p class="text-xs text-blue-100 flex items-center gap-1 mt-1"><span class="material-icons-round text-xs">place</span> <span id="formAssetLoc">Lokasi</span></p>
+              <p class="text-xs text-blue-100 flex items-center gap-1 mt-1">
+                <span class="material-icons-round text-xs">place</span>
+                <span id="formAssetLoc">Lokasi</span>
+              </p>
             </div>
-            <button onclick="closeForm()" class="bg-white/10 p-1 rounded-full hover:bg-white/20"><span class="material-icons-round">close</span></button>
+            <button onclick="closeForm()" class="bg-white/10 p-1 rounded-full hover:bg-white/20 active:scale-90 transition-transform">
+              <span class="material-icons-round">close</span>
+            </button>
           </div>
+
           <div class="bg-orange-50 px-4 py-2 border-b border-orange-100 flex justify-between items-center">
             <span class="text-[10px] font-bold text-accent uppercase">ID Perangkat</span>
             <span class="text-xs font-mono font-bold text-primary" id="formAssetId">...</span>
@@ -218,31 +224,56 @@
               </div>
               <input type="hidden" id="statusInput" value="Normal" />
             </div>
+
             <div>
               <label class="block text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest">Catatan Officer</label>
-              <textarea id="catatanInput" rows="2" class="w-full bg-slate-50 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-accent transition-all" placeholder="Detail kendala..."></textarea>
+              <textarea id="catatanInput" rows="2" class="w-full bg-slate-50 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-accent transition-all placeholder:text-slate-300" placeholder="Detail kendala..."></textarea>
             </div>
-            <div class="mt-2">
+
+            <div>
               <label class="block text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest">Foto Bukti / Kondisi</label>
-              <div class="relative h-48 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 hover:border-accent flex flex-col items-center justify-center overflow-hidden transition-colors group">
-                <div class="group-hover:scale-110 transition-transform duration-300 flex flex-col items-center">
-                  <span class="material-icons-round text-slate-300 text-3xl group-hover:text-accent">add_a_photo</span>
-                  <span class="text-[10px] text-slate-400 mt-2 font-bold group-hover:text-accent">AMBIL FOTO</span>
+
+              <div class="relative h-48 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden mb-3">
+                <div id="placeholder_img1" class="flex flex-col items-center pointer-events-none">
+                  <span class="material-icons-round text-slate-300 text-3xl">image</span>
+                  <span class="text-[10px] text-slate-400 mt-2 font-bold">BELUM ADA FOTO</span>
                 </div>
                 <img id="prev_img1" class="absolute inset-0 w-full h-full object-cover hidden" />
-                <input type="file" id="file_img1" accept="image/*" capture="environment" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="previewImg(this, 'prev_img1')" />
               </div>
+
+              <div class="flex gap-3">
+                <button
+                  onclick="triggerFile('file_cam_lapor')"
+                  class="flex-1 bg-blue-50 text-blue-600 py-3 rounded-xl text-xs font-bold border border-blue-200 flex items-center justify-center gap-2 active:scale-95 hover:bg-blue-100 transition-all"
+                >
+                  <span class="material-icons-round text-lg">photo_camera</span> KAMERA
+                </button>
+                <button
+                  onclick="triggerFile('file_gal_lapor')"
+                  class="flex-1 bg-slate-50 text-slate-600 py-3 rounded-xl text-xs font-bold border border-slate-200 flex items-center justify-center gap-2 active:scale-95 hover:bg-slate-100 transition-all"
+                >
+                  <span class="material-icons-round text-lg">collections</span> GALERI
+                </button>
+              </div>
+
+              <input type="file" id="file_cam_lapor" accept="image/*" capture="environment" class="hidden" onchange="previewImg(this, 'prev_img1', 'file_gal_lapor')" />
+              <input type="file" id="file_gal_lapor" accept="image/*" class="hidden" onchange="previewImg(this, 'prev_img1', 'file_cam_lapor')" />
             </div>
-            <div class="pt-2">
+
+            <div class="pt-2 border-t border-dashed border-slate-200 mt-4">
               <div class="flex justify-between items-center mb-2" onclick="toggleHistory()" style="cursor: pointer">
-                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest"> Riwayat Perbaikan </label>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer"> Riwayat Perbaikan </label>
                 <span class="material-icons-round text-slate-400 text-sm" id="histIcon">expand_more</span>
               </div>
-              <div id="histLoading" class="hidden text-center py-2"><span class="material-icons-round animate-spin text-slate-300 text-sm">sync</span></div>
+              <div id="histLoading" class="hidden text-center py-2">
+                <span class="material-icons-round animate-spin text-slate-300 text-sm">sync</span>
+              </div>
               <div id="assetHistoryList" class="space-y-2 hidden max-h-40 overflow-y-auto bg-slate-50 p-2 rounded-xl border border-slate-100"></div>
             </div>
+
             <button onclick="submitLaporan()" class="w-full bg-accent hover:bg-orange-600 text-white py-4 rounded-xl font-bold text-sm shadow-xl shadow-accent/20 active:scale-[0.98] transition-all flex justify-center items-center gap-2">
-              <span>KIRIM LAPORAN</span><span class="material-icons-round text-sm">send</span>
+              <span>KIRIM LAPORAN</span>
+              <span class="material-icons-round text-sm">send</span>
             </button>
           </div>
         </div>
@@ -324,7 +355,6 @@
       <div class="max-w-md mx-auto grid grid-cols-5 h-full relative px-2">
         <button class="nav-btn active" onclick="switchTab('home', this)"><span class="material-icons-round text-2xl mb-0.5">home</span><span class="text-[9px] font-bold">Beranda</span></button>
         <button class="nav-btn" onclick="switchTab('patrol', this)"><span class="material-icons-round text-2xl mb-0.5">admin_panel_settings</span><span class="text-[9px] font-bold">Patrol</span></button>
-
         <div class="relative flex justify-center -top-6 group">
           <button
             onclick="startScanner()"
@@ -340,22 +370,19 @@
       </div>
     </nav>
 
-    <div id="modalScanner" class="fixed inset-0 bg-black z-[100] hidden flex-col animate-fade-in">
-      <div class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
-        <div id="reader" class="w-full max-w-sm h-auto bg-black"></div>
-        <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
-          <div class="w-64 h-64 border-2 border-white/30 rounded-3xl relative">
-            <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-accent rounded-tl-xl"></div>
-            <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-accent rounded-tr-xl"></div>
-            <div class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-accent rounded-bl-xl"></div>
-            <div class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-accent rounded-br-xl"></div>
-            <div class="absolute top-0 left-0 w-full h-1 bg-accent/50 shadow-[0_0_15px_rgba(249,115,22,0.8)] animate-[bounce_2s_infinite]"></div>
-          </div>
-        </div>
-      </div>
-      <div class="p-6 bg-black flex justify-between items-center text-white backdrop-blur-sm bg-opacity-80">
-        <p class="text-sm font-medium opacity-90">Arahkan kamera ke QR Code</p>
-        <button onclick="closeModal('modalScanner')" class="text-white text-sm font-bold mt-4 border border-white/30 px-6 py-2 rounded-full">BATAL</button>
+    <div id="modalScanner" class="fixed inset-0 z-[60] hidden flex-col bg-black">
+      <button onclick="closeModal('modalScanner')" class="absolute top-4 right-4 bg-white/20 text-white p-2 rounded-full backdrop-blur-sm z-50">
+        <span class="material-icons-round">close</span>
+      </button>
+
+      <div id="reader" class="w-full h-full bg-black"></div>
+
+      <div class="absolute bottom-10 left-0 right-0 flex justify-center px-6">
+        <button onclick="triggerFile('file_scan_qr')" class="bg-white text-slate-800 px-4 py-3 rounded-full shadow-lg font-bold text-xs flex items-center gap-2">
+          <span class="material-icons-round text-primary">image_search</span>
+          Scan dari Galeri
+        </button>
+        <input type="file" id="file_scan_qr" accept="image/*" class="hidden" onchange="scanFromFile(this)" />
       </div>
     </div>
 
@@ -504,26 +531,85 @@
     </div>
     <div id="temp_qr_holder" style="display: none"></div>
 
-    <div id="modalJurnal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden items-end sm:items-center justify-center p-4">
-      <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-scale-up max-h-[90vh] overflow-y-auto">
-        <h3 class="font-bold text-lg mb-1 text-primary">Dokumentasi Pekerjaan</h3>
-        <p class="text-xs text-slate-400 mb-5">Catat kegiatan non-rutin/insidental.</p>
-        <div class="space-y-4">
-          <input type="text" id="jurnal_judul" placeholder="Judul Kegiatan (Cth: Relokasi CCTV)" class="w-full border-2 border-slate-100 bg-slate-50 p-3 rounded-xl text-sm font-bold focus:border-accent outline-none" />
-          <input type="text" id="jurnal_lokasi" placeholder="Lokasi Pengerjaan" class="w-full border-2 border-slate-100 bg-slate-50 p-3 rounded-xl text-sm focus:border-accent outline-none" />
-          <textarea id="jurnal_desc" rows="3" placeholder="Deskripsi teknis pekerjaan..." class="w-full border-2 border-slate-100 bg-slate-50 p-3 rounded-xl text-sm focus:border-accent outline-none"></textarea>
-          <div class="relative h-40 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 hover:border-accent flex flex-col items-center justify-center overflow-hidden transition-colors group">
-            <div class="group-hover:scale-110 transition-transform duration-300 flex flex-col items-center">
-              <span class="material-icons-round text-slate-300 text-3xl group-hover:text-accent">add_a_photo</span>
-              <span class="text-[10px] text-slate-400 mt-2 font-bold group-hover:text-accent">FOTO KEGIATAN</span>
+    <div id="modalJurnal" class="fixed inset-0 z-[60] hidden justify-center items-end sm:items-center bg-black/50 backdrop-blur-sm animate-fade-in">
+      <div class="bg-white w-full sm:w-[400px] rounded-t-2xl sm:rounded-2xl p-5 animate-slide-up shadow-2xl h-[85vh] sm:h-auto overflow-y-auto flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <h3 class="font-bold text-lg text-slate-800">Buat Jurnal Harian</h3>
+            <p class="text-xs text-slate-400">Catat aktivitas pekerjaan hari ini</p>
+          </div>
+          <button onclick="closeModal('modalJurnal')" class="bg-slate-100 p-2 rounded-full text-slate-500 hover:bg-slate-200 transition-colors">
+            <span class="material-icons-round text-lg">close</span>
+          </button>
+        </div>
+
+        <div class="space-y-4 flex-1 overflow-y-auto pb-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Judul Kegiatan</label>
+            <input
+              type="text"
+              id="jurnal_judul"
+              class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:bg-white transition-all placeholder:text-slate-300"
+              placeholder="Contoh: Perbaikan Jaringan Ops"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Lokasi / Divisi</label>
+            <input
+              type="text"
+              id="jurnal_lokasi"
+              class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:bg-white transition-all placeholder:text-slate-300"
+              placeholder="Contoh: Ruang Server / Gudang Atas"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Deskripsi Detail</label>
+            <textarea
+              id="jurnal_desc"
+              rows="3"
+              class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:bg-white transition-all placeholder:text-slate-300"
+              placeholder="Jelaskan apa yang dikerjakan..."
+            ></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-2">Foto Dokumentasi</label>
+
+            <div class="w-full h-40 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden mb-3 relative group hover:border-blue-300 transition-colors">
+              <div id="placeholder_jurnal" class="flex flex-col items-center pointer-events-none">
+                <span class="material-icons-round text-slate-300 text-3xl group-hover:text-blue-300 transition-colors">add_a_photo</span>
+                <span class="text-[10px] text-slate-400 mt-2">Preview Foto</span>
+              </div>
+              <img id="prev_img_jurnal" class="absolute inset-0 w-full h-full object-cover hidden" />
             </div>
-            <img id="prev_jurnal" class="absolute inset-0 w-full h-full object-cover hidden" />
-            <input type="file" id="file_jurnal" accept="image/*" capture="environment" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="previewImg(this, 'prev_jurnal')" />
+
+            <div class="flex gap-3">
+              <button
+                onclick="triggerFile('file_cam_jurnal')"
+                class="flex-1 bg-blue-50 text-blue-600 py-3 rounded-xl text-xs font-bold border border-blue-200 flex items-center justify-center gap-2 active:scale-95 hover:bg-blue-100 transition-all"
+              >
+                <span class="material-icons-round text-lg">photo_camera</span> KAMERA
+              </button>
+              <button
+                onclick="triggerFile('file_gal_jurnal')"
+                class="flex-1 bg-slate-50 text-slate-600 py-3 rounded-xl text-xs font-bold border border-slate-200 flex items-center justify-center gap-2 active:scale-95 hover:bg-slate-100 transition-all"
+              >
+                <span class="material-icons-round text-lg">collections</span> GALERI
+              </button>
+            </div>
+
+            <input type="file" id="file_cam_jurnal" accept="image/*" capture="environment" class="hidden" onchange="previewImg(this, 'prev_img_jurnal', 'file_gal_jurnal')" />
+            <input type="file" id="file_gal_jurnal" accept="image/*" class="hidden" onchange="previewImg(this, 'prev_img_jurnal', 'file_cam_jurnal')" />
           </div>
-          <div class="flex gap-2 pt-2">
-            <button onclick="closeModal('modalJurnal')" class="flex-1 bg-slate-100 text-slate-500 py-3 rounded-xl font-bold">Batal</button>
-            <button onclick="submitJurnal()" class="flex-1 bg-primary text-white py-3 rounded-xl font-bold shadow-lg shadow-primary/20 active:scale-95 transition-transform">Posting</button>
-          </div>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-slate-100">
+          <button onclick="submitJurnal()" class="w-full bg-primary hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-all flex justify-center items-center gap-2">
+            <span>POSTING JURNAL</span>
+            <span class="material-icons-round text-sm">send</span>
+          </button>
         </div>
       </div>
     </div>
@@ -570,7 +656,7 @@
         <div class="absolute top-0 left-0 w-full h-2 bg-primary"></div>
         <img src="Berlian-Manyar-Sejahtera-New-Thumbnail.jpg" alt="BMS Logo" class="w-20 h-auto mx-auto mb-4 object-contain drop-shadow-sm" />
         <h3 class="font-bold text-lg text-primary leading-tight">BMS Asset Ops</h3>
-        <p class="text-xs text-accent font-bold mb-4 uppercase tracking-wider">Testing app Manajement assetzz</p>
+        <p class="text-xs text-accent font-bold mb-4 uppercase tracking-wider">Enterprise Edition v3.0</p>
         <a
           id="btnHelpWA"
           target="_blank"
@@ -584,4 +670,3 @@
     <script src="script.js"></script>
   </body>
 </html>
-
