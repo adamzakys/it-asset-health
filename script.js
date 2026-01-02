@@ -740,53 +740,69 @@ function scanFromFile(input) {
 }
 
 // ================= FITUR SHARE UMUM (SYSTEM SHARE) =================
-// ================= SHARE NATIVE (MURNI) =================
+// ================= SHARE VIA WEB SHARE API (METODE GOOGLE) =================
 
 async function executeShareWA() {
+  // Cek apakah ada data
   if (!tempShareData) return;
 
-  // 1. Susun Caption
+  // 1. SIAPKAN CAPTION (TEKS)
   const timeStr = new Date().toLocaleString("id-ID");
-  let caption = "";
+  let textPesan = "";
 
   if (tempShareData.type === "laporan") {
     const { nama, id, loc, status, catatan } = tempShareData;
-    caption = `*LAPORAN IT OPERASIONAL*\nPT BMS\n\n` + `ASET    : ${nama}\n` + `LOKASI  : ${loc}\n` + `STATUS  : ${status}\n` + `NOTE    : ${catatan || "-"}\n` + `WAKTU   : ${timeStr}`;
-  } else if (tempShareData.type === "jurnal") {
+    textPesan = `*LAPORAN IT OPERASIONAL*\n\n` + `ASET    : ${nama}\n` + `LOKASI  : ${loc}\n` + `STATUS  : ${status}\n` + `NOTE    : ${catatan || "-"}\n` + `WAKTU   : ${timeStr}`;
+  } else {
     const { judul, lokasi, desc } = tempShareData;
-    caption = `*JURNAL HARIAN IT*\nPT BMS\n\n` + `KEGIATAN : ${judul}\n` + `LOKASI   : ${lokasi}\n` + `DETAIL   : ${desc}\n` + `WAKTU    : ${timeStr}`;
+    textPesan = `*JURNAL HARIAN IT*\n\n` + `KEGIATAN : ${judul}\n` + `LOKASI   : ${lokasi}\n` + `DETAIL   : ${desc}\n` + `WAKTU    : ${timeStr}`;
   }
 
-  // 2. Siapkan File Gambar
-  let shareData = {
-    title: "Laporan BMS", // Beberapa HP pakai ini sebagai subjek/caption cadangan
-    text: caption, // Ini caption utamanya
-  };
+  // 2. SIAPKAN FILE GAMBAR (PERSIS CARA GOOGLE)
+  let filesArray = [];
 
   if (tempShareData.img1) {
     try {
-      // Kita buat file .jpg fresh dari blob yang ada
-      const fileName = `Laporan_${Date.now()}.jpg`;
-      const file = new File([tempShareData.img1], fileName, { type: "image/jpeg" });
+      // Kita ambil blob (data mentah) dari file yang diupload
+      const originalFile = tempShareData.img1;
 
-      // Masukkan ke data share
-      shareData.files = [file];
+      // Buat File baru yang bersih (mirip langkah 'new File' di contoh Google)
+      // Kita paksa namanya jadi .jpg agar dikenali WA
+      const cleanFile = new File([originalFile], "laporan_bms.jpg", {
+        type: originalFile.type || "image/jpeg",
+      });
+
+      filesArray = [cleanFile];
     } catch (e) {
-      console.warn("Gagal proses file:", e);
+      console.error("Gagal proses gambar:", e);
     }
   }
 
-  // 3. Eksekusi Share
-  if (navigator.share) {
+  // 3. EKSEKUSI SHARE (DENGAN PENGECEKAN)
+  // Kita cek dulu apakah browser mendukung share file ini
+  if (navigator.canShare && navigator.canShare({ files: filesArray })) {
     try {
-      // Kita tidak pakai 'url', karena sering bikin bentrok dengan 'files' di WA
-      await navigator.share(shareData);
-      console.log("Share berhasil dibuka");
-    } catch (err) {
-      console.warn("User membatalkan atau error:", err);
+      await navigator.share({
+        files: filesArray, // Gambarnya
+        title: "Laporan BMS", // Judul
+        text: textPesan, // Teks Caption
+      });
+      console.log("Berhasil berbagi!");
+    } catch (error) {
+      console.log("Gagal berbagi atau dibatalkan:", error);
     }
   } else {
-    alert("Browser tidak support fitur share.");
+    // Jika HP menolak gambar (misal format tidak didukung), kita kirim Teks saja
+    // Ini fallback biar setidaknya laporan terkirim
+    try {
+      await navigator.share({
+        title: "Laporan BMS",
+        text: textPesan,
+      });
+    } catch (err) {
+      // Fallback terakhir: WA Link
+      window.open(`https://wa.me/?text=${encodeURIComponent(textPesan)}`, "_blank");
+    }
   }
 }
 
