@@ -10,12 +10,12 @@ Project iseng-iseng berhadiah (tapi serius) untuk mendigitalisasi operasional IT
 
 Aplikasi ini dirancang sebagai "Super App" sederhana untuk teknisi IT/Magang:
 
-* **📷 Intelligent QR Scanner:** Scan QR Code aset langsung dari Kamera atau upload file QR dari Galeri HP.
-* **🛠️ Patrol Reporting:** Lapor kondisi aset (Normal/Maintanance/Rusak) dengan bukti foto ganda.
-* **📝 Digital Logbook:** Jurnal harian untuk mencatat aktivitas teknisi/magang + lokasi & foto kegiatan.
-* **📲 Smart WhatsApp Share:** Generate teks laporan otomatis yang rapi & formal, siap kirim ke grup WA (anti-repot ngetik).
-* **🧰 IT Tools:** Kumpulan script & link download penting (AutoClean, Driver Printer, Network Fix) dalam satu genggaman.
-* **📊 Dashboard & Statistik:** Pantau jumlah aset dan status kerusakan secara real-time.
+* ** Intelligent QR Scanner:** Scan QR Code aset langsung dari Kamera atau upload file QR dari Galeri HP.
+* ** Patrol Reporting:** Lapor kondisi aset (Normal/Maintanance/Rusak) dengan bukti foto ganda.
+* ** Digital Logbook:** Jurnal harian untuk mencatat aktivitas teknisi/magang + lokasi & foto kegiatan.
+* ** Smart WhatsApp Share:** Generate teks laporan otomatis yang rapi & formal, siap kirim ke grup WA (anti-repot ngetik).
+* ** IT Tools:** Kumpulan script & link download penting (AutoClean, Driver Printer, Network Fix) dalam satu genggaman.
+* ** Dashboard & Statistik:** Pantau jumlah aset dan status kerusakan secara real-time.
 
 ## 🛠️ Teknologi yang Dipakai
 
@@ -32,12 +32,4 @@ Karena ini PWA, tidak perlu install di PlayStore.
 2.  Buka di Chrome (Android) / Safari (iOS).
 3.  Pilih menu titik tiga -> **"Add to Home Screen"**.
 
-## 📂 Struktur Project
-
 ```text
-/
-├── index.html        # File utama aplikasi (UI & Logic Frontend)
-├── script.js         # (Jika dipisah) Logika JavaScript
-├── manifest.json     # Konfigurasi PWA (Ikon, Nama App)
-├── sw.js             # Service Worker (untuk fitur offline/cache)
-└── README.md         # File dokumentasi ini
