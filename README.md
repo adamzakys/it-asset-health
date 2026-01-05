@@ -10,12 +10,12 @@ Project iseng-iseng berhadiah (tapi serius) untuk mendigitalisasi operasional IT
 
 Aplikasi ini dirancang sebagai "Super App" sederhana untuk teknisi IT/Magang:
 
-* ** Intelligent QR Scanner:** Scan QR Code aset langsung dari Kamera atau upload file QR dari Galeri HP.
-* ** Patrol Reporting:** Lapor kondisi aset (Normal/Maintanance/Rusak) dengan bukti foto ganda.
-* ** Digital Logbook:** Jurnal harian untuk mencatat aktivitas teknisi/magang + lokasi & foto kegiatan.
-* ** Smart WhatsApp Share:** Generate teks laporan otomatis yang rapi & formal, siap kirim ke grup WA (anti-repot ngetik).
-* ** IT Tools:** Kumpulan script & link download penting (AutoClean, Driver Printer, Network Fix) dalam satu genggaman.
-* ** Dashboard & Statistik:** Pantau jumlah aset dan status kerusakan secara real-time.
+* **Intelligent QR Scanner:** Scan QR Code aset langsung dari Kamera atau upload file QR dari Galeri HP.
+* **Patrol Reporting:** Lapor kondisi aset (Normal/Maintanance/Rusak) dengan bukti foto ganda.
+* **Digital Logbook:** Jurnal harian untuk mencatat aktivitas teknisi/magang + lokasi & foto kegiatan.
+* **Smart WhatsApp Share:** Generate teks laporan otomatis yang rapi & formal, siap kirim ke grup WA (anti-repot ngetik).
+* **IT Tools:** Kumpulan script & link download penting (AutoClean, Driver Printer, Network Fix) dalam satu genggaman.
+* **Dashboard & Statistik:** Pantau jumlah aset dan status kerusakan secara real-time.
 
 ## 🛠️ Teknologi yang Dipakai
 
